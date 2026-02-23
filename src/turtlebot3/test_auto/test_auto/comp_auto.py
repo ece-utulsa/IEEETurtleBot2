@@ -70,7 +70,11 @@ class Turtlebot3RelativeMove(Node):
         self.goal_pose_x = 0.0
         self.goal_pose_y = 0.0
         self.goal_pose_theta = 0.0
+        self.start_pose_x = 0.0
+        self.start_pose_y = 0.0
+        self.start_pose_theta = 0.0
 
+        self.odom_reset = False #I'm going to use this variable to reset odometry at the beginning of the code
         self.get_key_state = False # whether we have new user input to work off of
         self.init_odom_state = False # whether we have new odometry data to work off of
 
@@ -92,9 +96,16 @@ class Turtlebot3RelativeMove(Node):
     #this sets of previous (current) position based on the odometry data (better hope its correct)
     def odom_callback(self, msg): #function called when we get data from odometry subscription
         #self.get_logger().info('odom calledback')
-        self.last_pose_x = msg.pose.pose.position.x
-        self.last_pose_y = msg.pose.pose.position.y
-        _, _, self.last_pose_theta = self.euler_from_quaternion(msg.pose.pose.orientation) #changes how angles are represented, math smth smth
+        if(not self.odom_reset): 
+            self.start_pose_x = msg.pose.pose.position.x
+            self.start_pose_y = msg.pose.pose.position.y
+            self.start_pose_theta = self.euler_from_quaternion(msg.pose.pose.orientation)[2]
+            self.odom_reset = True
+
+        self.last_pose_x = msg.pose.pose.position.x - self.start_pose_x
+        self.last_pose_y = msg.pose.pose.position.y - self.start_pose_y
+        #_, _, self.last_pose_theta = self.euler_from_quaternion(msg.pose.pose.orientation) #changes how angles are represented, math smth smth
+        self.last_pose_theta = self.euler_from_quaternion(msg.pose.pose.orientation)[2] - self.start_pose_theta #ignore roll and pitch (though the fact that it can do that is good to keep in mind)
 
         self.init_odom_state = True #this tells us whether we should trust the data in last_pose
 
@@ -139,21 +150,23 @@ class Turtlebot3RelativeMove(Node):
             #straight
             if (self.states[self.state][3] == "y") and abs(deltay) > 0.1:
                 if (deltay > 0.1): #this may need to change for precision's sake
-                    twist.linear.y = 0.075 #change this for speed
+                    twist.linear.x = -0.075 #change this for speed
                     self.get_logger().info('y (goal, curr) ' + str(self.goal_pose_y) + ' ' + str(self.last_pose_y)) #add telemetry
                 elif (deltay < -0.1):
-                    twist.linear.y = -0.075
+                    twist.linear.x = 0.075 #apparently x is robot centric forward
                     self.get_logger().info('-y (goal, curr) ' + str(self.goal_pose_y) + ' ' + str(self.last_pose_y))
+
             elif (self.states[self.state][3] == "x") and abs(deltax) > 0.1:
                 if (deltax > 0.1): #this may need to change for precision's sake
-                    twist.linear.x = -0.075 #change this for speed
+                    twist.linear.x = 0.075 #change this for speed
                     self.get_logger().info('x (goal, curr) ' + str(self.goal_pose_x) + ' ' + str(self.last_pose_x)) #add telemetry
                 elif (deltax) < -0.1:
-                    twist.linear.x = 0.075
+                    twist.linear.x = -0.075
                     self.get_logger().info('-x (goal, curr) ' + str(self.goal_pose_x) + ' ' + str(self.last_pose_x))
+
             #turn
             elif (self.states[self.state][3] == "theta") and abs(deltat) > 0.1:
-                if deltat > 0.1: #this number may need to change
+                if deltat > 0.05: #this number may need to change
                     '''#make it between -pi and pi
                     while self.goal_pose_theta > 6.30:
                         self.goal_pose_theta = self.goal_pose_theta - 6.28
@@ -163,12 +176,11 @@ class Turtlebot3RelativeMove(Node):
                         self.last_pose_theta = self.last_pose_theta - 6.28
                     while self.last_pose_theta < -6.3:
                         self.last_pose_theta = self.last_pose_theta + 6.28'''
-                    twist.angular.z = 0.1
+                    twist.angular.z = 0.5
                     self.get_logger().info('z (goal, curr) ' + str(self.goal_pose_theta) + ' ' + str(self.last_pose_theta))
-                else:
-                    twist.angular.z = -0.1
+                elif deltat < -0.05: #if it drifted slightly, that's ok, we're ignoring that
+                    twist.angular.z = -0.5
                     self.get_logger().info('-z (goal, curr) ' + str(self.goal_pose_theta) + ' ' + str(self.last_pose_theta))
-                self.get_logger().info(str(twist.angular.z) + ' power')
             else:
                 self.state = self.state + 1
                 self.get_key_state = False 
