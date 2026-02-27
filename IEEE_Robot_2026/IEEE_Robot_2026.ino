@@ -17,16 +17,19 @@ Adafruit_PWMServoDriver servos = Adafruit_PWMServoDriver();
 #define SERVO_FREQ 50
 
 // Start Light Sensor
-#define PHOTOCELL 0
+#define PHOTOCELL_F A0
+#define PHOTOCELL_B A1
 #define LED 12
-int photocellReading; 
+int frontReading;
+int backReading;
 bool start = false;
-int prevReading;
 
 void setup() {
   Serial.begin(115200);  // USB serial to Pi
 
-  pinMode(PHOTOCELL, INPUT);
+  // Setup Start LED
+  pinMode(PHOTOCELL_F, INPUT);
+  pinMode(PHOTOCELL_B, INPUT);
   pinMode(LED, OUTPUT);
   digitalWrite(LED, HIGH);
 
@@ -48,11 +51,7 @@ void setup() {
 
 void loop() {
   if (!start) {
-    photocellReading = analogRead(PHOTOCELL);
-    if (photocellReading  >= 500) {
-      start = true;
-      digitalWrite(LED, LOW);
-    }
+    start = startLED();
   }
   if (Serial.available()) {  // command byte + 2 data bytes
     if (Serial.read() == 0xFF) {
@@ -81,6 +80,17 @@ void loop() {
       }
     }
   }
+}
+
+bool startLED() {
+  bool trigger = false;
+  frontReading = analogRead(PHOTOCELL_F);
+  backReading = analogRead(PHOTOCELL_B);
+  if (backReading - frontReading >= 200) {
+    trigger = true;
+    digitalWrite(LED, LOW);
+  }
+  return trigger;
 }
 
 void motorStep(int numSteps, int direction) {
