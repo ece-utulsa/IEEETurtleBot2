@@ -6,11 +6,12 @@
 #define RELAY_PIN 7
 
 //Stepper Motors
-#define ENA_1 2
+#define ENA_1 7
 #define DIR_1 3
 #define STEP_1 4
 
-#define LIMIT_SWTICH 9
+#define LIMIT_SWITCH 2
+bool limitTrigger = false;
 
 // Servos
 Adafruit_PWMServoDriver servos = Adafruit_PWMServoDriver();
@@ -26,6 +27,10 @@ int frontReading;
 int backReading;
 bool start = false;
 
+// Debouncing
+#define DEBOUNCE_DELAY 100
+unsigned long lastDebounceTime = 0;
+
 void setup() {
   Serial.begin(115200);  // USB serial to Pi
 
@@ -35,6 +40,7 @@ void setup() {
   pinMode(LED, OUTPUT);
   digitalWrite(LED, HIGH);
 
+
   pinMode(RELAY_PIN, OUTPUT);
   digitalWrite(RELAY_PIN, LOW);  // relay off
 
@@ -43,7 +49,8 @@ void setup() {
   pinMode(DIR_1, OUTPUT);
   pinMode(STEP_1, OUTPUT);
   digitalWrite(ENA_1, LOW);
-  pinMode(LIMIT_SWITCH, INPUT);
+  pinMode(LIMIT_SWITCH, INPUT_PULLUP);
+  attachInterrupt(digitalPinToInterrupt(LIMIT_SWITCH), switchInterrupt, FALLING);
 
   // Setup Servos
   servos.begin();
@@ -60,11 +67,11 @@ void loop() {
     if (Serial.read() == 0xFF) {
       while (Serial.available() < 3)
         ;
-      uint8_t cmd = Serial.read();
+      uint8_t command = Serial.read();
       uint8_t data1 = Serial.read();
       uint8_t data2 = Serial.read();
 
-      switch (cmd) {
+      switch (command) {
         case 0x01:                  // Shovel Stepper
           motorStep(data1, data2);  // 0 = down, 1 = up
           Serial.write(0xAA);
@@ -144,5 +151,12 @@ void turnServos(int direction) {
   } else if (direction == 1) {
     servos.setPWM(0, 0, SERVOMAX);
     servos.setPWM(1, 0, SERVOMIN);
+  }
+}
+
+void switchInterrupt() {
+  if (millis() - lastDebounceTime > DEBOUNCE_DELAY) {
+    limitTrigger = true;
+    lastDebounceTime = millis();
   }
 }
