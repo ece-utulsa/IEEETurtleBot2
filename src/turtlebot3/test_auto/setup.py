@@ -22,7 +22,8 @@ setup(
         'console_scripts': [
             'test_auto = test_auto.test_auto:main',
 	    'piPub = test_auto.piPub:main',
-	    'comp_auto = test_auto.comp_auto:main'
+	    'comp_auto = test_auto.comp_auto:main',
+        'map_go = mapAndGo.mapAndGo:main'
         ],
     },
 )

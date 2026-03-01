@@ -1,0 +1,25 @@
+[7.163s] Invoking command in '/home/robotics/desktop_ws/IEEETurtleBot2/src/turtlebot3/test_auto': PYTHONPATH=/home/robotics/desktop_ws/IEEETurtleBot2/build/test_auto/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/robotics/desktop_ws/IEEETurtleBot2/install/test_auto/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../../build/test_auto build --build-base /home/robotics/desktop_ws/IEEETurtleBot2/build/test_auto/build install --record /home/robotics/desktop_ws/IEEETurtleBot2/build/test_auto/install.log --single-version-externally-managed install_data
+[10.147s] running egg_info
+[10.153s] writing ../../../build/test_auto/test_auto.egg-info/PKG-INFO
+[10.157s] writing dependency_links to ../../../build/test_auto/test_auto.egg-info/dependency_links.txt
+[10.159s] writing entry points to ../../../build/test_auto/test_auto.egg-info/entry_points.txt
+[10.161s] writing requirements to ../../../build/test_auto/test_auto.egg-info/requires.txt
+[10.163s] writing top-level names to ../../../build/test_auto/test_auto.egg-info/top_level.txt
+[10.181s] reading manifest file '../../../build/test_auto/test_auto.egg-info/SOURCES.txt'
+[10.187s] adding license file 'LICENSE'
+[10.191s] writing manifest file '../../../build/test_auto/test_auto.egg-info/SOURCES.txt'
+[10.192s] running build
+[10.192s] running build_py
+[10.202s] running install
+[10.205s] running install_lib
+[10.225s] running install_data
+[10.231s] running install_egg_info
+[10.250s] removing '/home/robotics/desktop_ws/IEEETurtleBot2/install/test_auto/lib/python3.10/site-packages/test_auto-0.0.0-py3.10.egg-info' (and everything under it)
+[10.254s] Copying ../../../build/test_auto/test_auto.egg-info to /home/robotics/desktop_ws/IEEETurtleBot2/install/test_auto/lib/python3.10/site-packages/test_auto-0.0.0-py3.10.egg-info
+[10.271s] running install_scripts
+[10.484s] Installing comp_auto script to /home/robotics/desktop_ws/IEEETurtleBot2/install/test_auto/lib/test_auto
+[10.488s] Installing map_go script to /home/robotics/desktop_ws/IEEETurtleBot2/install/test_auto/lib/test_auto
+[10.490s] Installing piPub script to /home/robotics/desktop_ws/IEEETurtleBot2/install/test_auto/lib/test_auto
+[10.492s] Installing test_auto script to /home/robotics/desktop_ws/IEEETurtleBot2/install/test_auto/lib/test_auto
+[10.496s] writing list of installed files to '/home/robotics/desktop_ws/IEEETurtleBot2/build/test_auto/install.log'
+[10.702s] Invoked command in '/home/robotics/desktop_ws/IEEETurtleBot2/src/turtlebot3/test_auto' returned '0': PYTHONPATH=/home/robotics/desktop_ws/IEEETurtleBot2/build/test_auto/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/robotics/desktop_ws/IEEETurtleBot2/install/test_auto/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../../build/test_auto build --build-base /home/robotics/desktop_ws/IEEETurtleBot2/build/test_auto/build install --record /home/robotics/desktop_ws/IEEETurtleBot2/build/test_auto/install.log --single-version-externally-managed install_data

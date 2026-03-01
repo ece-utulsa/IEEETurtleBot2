@@ -1,0 +1,2 @@
+mapAndGo
+test_auto
