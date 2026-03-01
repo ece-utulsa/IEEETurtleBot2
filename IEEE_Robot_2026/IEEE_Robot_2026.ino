@@ -117,10 +117,15 @@ void motorStep(int numSteps, int direction) {
 
 void motorFull(int direction) {
   if (direction = 0) {
-    bool moving = false;
-    while (!moving) {
-      digitalRead(LIMIT_SWITCH);
+    digitalWrite(DIR_1, LOW);
+    while (digitalRead(LIMIT_SWITCH) == LOW) {
+      digitalWrite(STEP_1, HIGH);
+      delay(1);
+      digitalWrite(STEP_1, LOW);
+      delay(1);
     }
+  } else if (direction == 1) {
+    digitalWrite(DIR_1, HIGH);
   }
 }
 
