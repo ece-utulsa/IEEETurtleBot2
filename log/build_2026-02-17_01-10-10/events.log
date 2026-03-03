@@ -1,0 +1,47 @@
+[0.000000] (-) TimerEvent: {}
+[0.001999] (-) JobUnselected: {'identifier': 'dynamixel_sdk'}
+[0.002801] (-) JobUnselected: {'identifier': 'dynamixel_sdk_custom_interfaces'}
+[0.003247] (-) JobUnselected: {'identifier': 'dynamixel_sdk_examples'}
+[0.003510] (-) JobUnselected: {'identifier': 'multicontrol'}
+[0.003736] (-) JobUnselected: {'identifier': 'turtlebot3'}
+[0.003961] (-) JobUnselected: {'identifier': 'turtlebot3_bringup'}
+[0.004181] (-) JobUnselected: {'identifier': 'turtlebot3_cartographer'}
+[0.004398] (-) JobUnselected: {'identifier': 'turtlebot3_description'}
+[0.004711] (-) JobUnselected: {'identifier': 'turtlebot3_example'}
+[0.004935] (-) JobUnselected: {'identifier': 'turtlebot3_msgs'}
+[0.005153] (-) JobUnselected: {'identifier': 'turtlebot3_navigation2'}
+[0.005368] (-) JobUnselected: {'identifier': 'turtlebot3_node'}
+[0.005584] (-) JobUnselected: {'identifier': 'turtlebot3_teleop'}
+[0.005813] (test_auto) JobQueued: {'identifier': 'test_auto', 'dependencies': OrderedDict()}
+[0.006051] (test_auto) JobStarted: {'identifier': 'test_auto'}
+[0.094250] (-) TimerEvent: {}
+[0.195483] (-) TimerEvent: {}
+[0.296654] (-) TimerEvent: {}
+[0.397822] (-) TimerEvent: {}
+[0.498989] (-) TimerEvent: {}
+[0.600188] (-) TimerEvent: {}
+[0.701551] (-) TimerEvent: {}
+[0.802765] (-) TimerEvent: {}
+[0.903935] (-) TimerEvent: {}
+[1.005239] (-) TimerEvent: {}
+[1.106432] (-) TimerEvent: {}
+[1.207626] (-) TimerEvent: {}
+[1.308846] (-) TimerEvent: {}
+[1.410027] (-) TimerEvent: {}
+[1.511219] (-) TimerEvent: {}
+[1.612376] (-) TimerEvent: {}
+[1.713679] (-) TimerEvent: {}
+[1.814810] (-) TimerEvent: {}
+[1.915932] (-) TimerEvent: {}
+[2.017148] (-) TimerEvent: {}
+[2.118296] (-) TimerEvent: {}
+[2.219449] (-) TimerEvent: {}
+[2.320625] (-) TimerEvent: {}
+[2.421777] (-) TimerEvent: {}
+[2.522951] (-) TimerEvent: {}
+[2.624116] (-) TimerEvent: {}
+[2.725444] (-) TimerEvent: {}
+[2.826880] (-) TimerEvent: {}
+[2.928820] (-) TimerEvent: {}
+[2.986663] (test_auto) JobEnded: {'identifier': 'test_auto', 'rc': 0}
+[2.992379] (-) EventReactorShutdown: {}

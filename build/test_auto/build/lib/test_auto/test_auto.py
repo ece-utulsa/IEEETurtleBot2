@@ -1,17 +1,5 @@
 #from https://github.com/ROBOTIS-GIT/turtlebot3/blob/main/turtlebot3_example/turtlebot3_example/turtlebot3_relative_move/turtlebot3_relative_move.py
 
-'''
-As the robot drives through each square, mark it as travelled. We will know this based on data from /odom. 
-Maybe we will need to relocalize at some point with lidar or just the laser (laser's topic is called /scan and there’s a video for it), -- this is what Kalman filters are for, https://github.com/kimsooyoung/kalman_filter_ros2_tutorial/blob/main/kalman_filter/kalman_filter/kalman_filter_solution.py
-especially if the asteroids throw us off course, we’ll need to test it. 
-First thing is to drop off our beacon if we have one, and we’ll get the aprilTag ID at the same time if we’re using it. 
-Then we head straight for the cave, no matter how many asteroids we do or don’t have 
-(ideally we could dump some on the way if we are reliable enough, but i don’t think we will be). 
-As soon as we touch that square inside the cave, we can go back and dump whatever geodinium we’ve collected into the close CSC. 
-Let’s see how many asteroids our robot can hold, how long we can drive around in the cave, hopefully even outside it, before we have to go dump again. 
-Maybe we could do a fancy math equation and calculate how much time we have left vs how far we currently are from the rendezvous pads 
-to decide when exactly we need to leave to move the CSCs, but probably by the last 30 seconds (endgame anyone??? lol) 
-'''
 import math
 import os
 import sys
@@ -24,10 +12,6 @@ import numpy
 import rclpy
 from rclpy.node import Node
 from rclpy.qos import QoSProfile
-
-rows, cols = (4, 8)
-field = [[0 for i in range(cols)] for j in range(rows)]
-field[3][2] = 1 #starting sqaure (there are obviously no astroids here, but whatever)
 
 ros_distro = os.environ.get('ROS_DISTRO', 'humble').lower()
 if ros_distro == 'humble':
@@ -44,7 +28,7 @@ y: goal position y (unit: m)
 theta: goal orientation (range: -180 ~ 180, unit: deg)
 ------------------------------------------------------
 """
-#I copied this class exactly from Michael's multicontrol mynode, idk where he got it from; used to hopefully help stop the idiot at the end
+#I copied this class exactly from Michael's multicontrol mynode, idk where he got it from
 class SigintSkipper:
     def __init__(self, callback):
         self.callback = callback
@@ -58,6 +42,8 @@ class SigintSkipper:
 
     def __exit__(self, type, value, traceback):
         print('exiting sigint skipper')
+
+
 class Turtlebot3Path():
 
     @staticmethod
@@ -84,40 +70,19 @@ class Turtlebot3Path():
         return twist, step
 
 
-<<<<<<< Updated upstream
 class Turtlebot3RelativeMove(Node):
-=======
-    #I am not dealing with more python nonsense, just go with it
-    #states = [(intom(12), 0, 0, "x"), (intom(12), 0, degtorad(-90), "theta"), (intom(12), intom(12), degtorad(-90), "y"), (intom(12), intom(12), degtorad(-180), "theta"), (0, intom(12), degtorad(-180), "x"), (0, intom(12), degtorad(90), "theta"), (0, 0, degtorad(90), "y"), (0, 0, 0, "theta")]
-    state = 0
-    states = [(intom(18), 0, 0, "x")]
->>>>>>> Stashed changes
 
     def __init__(self): #python needs to specify self all over the place so that different objects of the same type are distinct
-        #scope? idk, here should be good
-        def intom(inch): #inch to meter conversion, bc IEEE uses in and turtlebot uses m
-            return inch * 0.0254
-        def degtorad(deg):
-            return deg * 3.141592 / 180
-
         super().__init__('turtlebot3_relative_move') #its parent/super() is node
 
         self.segment = 0 #idk when these numbers increase
-        #so you see, this obviously drives forward to the center line, rotates left, drives to the beacon mast, rotates right, and drives into the cave
-        self.segments = [(intom(12), 0, 0), #drives forward to center line
-                         (0, 0, degtorad(-90)), #rotate left
-                         (intom(36), 0, 0), #drive to beacon mast
-                         (0, 0, 3.14), #rotate right
-                         (intom(72), 0, 0), #drive into cave
-                         (intom(-20), 0, 0), #drive out of cave (TODO: slower so we don't lose elements?)
-                         (0, 0, degtorad(90)), #rotate right to face CSC
-                         (intom(12), 0, 0) #drive forward into the CSC
-                        ]
+        self.segments = [(0, 0, 1.6), (0.25, 0, 0), (0, 0, 3.14), (0.25, 0, 0)] #starting step, but ill let it count up
+        #self.segments = [(2, .25, 0, 0), (3, 0, 0, 1.7), (2, .1, 0, 0), (3, 0, 0, 1.7), (2, .25, 0, 0), (3, 0, 0, -1.7)]
 
         self.odom = Odometry()
         self.last_pose_x = 0.0
         self.last_pose_y = 0.0
-        self.last_pose_theta = 0.0 
+        self.last_pose_theta = 0.0 #i feel like we actually start at -1.7 or smth??
         self.goal_pose_x = 0.0
         self.goal_pose_y = 0.0
         self.goal_pose_theta = 0.0
@@ -141,31 +106,13 @@ class Turtlebot3RelativeMove(Node):
 
     #this sets of previous (current) position based on the odometry data (better hope its correct)
     def odom_callback(self, msg): #function called when we get data from odometry subscription
-<<<<<<< Updated upstream
         self.last_pose_x = msg.pose.pose.position.x
         self.last_pose_y = msg.pose.pose.position.y
         _, _, self.last_pose_theta = self.euler_from_quaternion(msg.pose.pose.orientation) #changes how angles are represented, math smth smth
-=======
-        #self.get_logger().info('odom calledback')
-        if(not self.odom_reset): 
-            self.start_pose_x = msg.pose.pose.position.x
-            self.start_pose_y = msg.pose.pose.position.y
-            self.start_pose_theta = self.euler_from_quaternion(msg.pose.pose.orientation)[2]
-            self.get_logger().info('start x' + str(self.start_pose_x))
-            self.get_logger().info('start y' + str(self.start_pose_y))
-            self.get_logger().info('start theta' + str(self.start_pose_theta))
-            self.odom_reset = True
 
-        self.last_pose_x = msg.pose.pose.position.x - self.start_pose_x
-        self.last_pose_y = msg.pose.pose.position.y - self.start_pose_y
-        #_, _, self.last_pose_theta = self.euler_from_quaternion(msg.pose.pose.orientation) #changes how angles are represented, math smth smth
-        self.last_pose_theta = self.euler_from_quaternion(msg.pose.pose.orientation)[2] - self.start_pose_theta #ignore roll and pitch (though the fact that it can do that is good to keep in mind)
->>>>>>> Stashed changes
+        self.get_logger().info('msg.pose.pose.position.x' + str(msg.pose.pose.position.x))
 
         self.init_odom_state = True #this tells us whether we should trust the data in last_pose
-
-        self.get_logger().info('current odom data: ' + str(msg.pose.pose.position.x)) #TODO: I think msg.pose.pose.position.x is an absolute position, let's see what format it is and how we can add it to the array
-        field[math.floor(msg.pose.pose.position.x / 12)][math.floor(msg.pose.pose.position.y / 12)] = 1 #TODO: where is 0??
 
     #if we have new odometry data, make a new path
     def update_callback(self): #called from the timer every 0.01 seconds
@@ -178,20 +125,19 @@ class Turtlebot3RelativeMove(Node):
         if not self.init_odom_state: #if we don't have new odometry data, no reason to move
             return
 
-<<<<<<< Updated upstream
         if not self.get_key_state: #if we don't have new user input, go ask for some (and it somehow waits until we get it, i guess stalls here? idk how interrupt works)
             #input_x, input_y, input_theta = self.get_key() #get user input
             #for i in range(len(self.segments)):
-            if(self.segment == 1):
+            if(self.segment == 0):
                 self.get_logger().info('current segment: ' + str(1))
                 input_x, input_y, input_theta = self.segments[0]
-            elif (self.segment == 2):
+            elif (self.segment == 1):
                 self.get_logger().info('current segment: ' + str(2))
                 input_x, input_y, input_theta = self.segments[1]
-            elif (self.segment == 3):
+            elif (self.segment == 2):
                 self.get_logger().info('current segment: ' + str(3))
                 input_x, input_y, input_theta = self.segments[2]
-            elif (self.segment == 4):
+            elif (self.segment == 3):
                 self.get_logger().info('current segment: ' + str(4))
                 input_x, input_y, input_theta = self.segments[3]
             else:
@@ -200,11 +146,6 @@ class Turtlebot3RelativeMove(Node):
 
             input_x_global = ( #idk this math exactly
                 math.cos(self.last_pose_theta) * input_x - math.sin(self.last_pose_theta) * input_y
-=======
-            '''self.get_logger().info('set goal poses')
-            input_x_global = ( #converting local input into global frame (i guess this will help)
-                math.cos(self.start_pose_theta) * input_x - math.sin(self.start_pose_theta) * input_y
->>>>>>> Stashed changes
             )
             input_y_global = (
                 math.sin(self.last_pose_theta) * input_x + math.cos(self.last_pose_theta) * input_y
@@ -212,18 +153,7 @@ class Turtlebot3RelativeMove(Node):
 
             self.goal_pose_x = self.last_pose_x + input_x_global
             self.goal_pose_y = self.last_pose_y + input_y_global
-<<<<<<< Updated upstream
             self.goal_pose_theta = self.last_pose_theta + input_theta
-=======
-            self.goal_pose_theta = self.last_pose_theta + input_theta'''
-            self.goal_pose_x = input_x - self.start_pose_x
-            self.goal_pose_y = input_y - self.start_pose_y
-            self.goal_pose_theta = input_theta - self.start_pose_theta #ignore roll and pitch (though the fact that it can do that is good to keep in mind)
-            self.get_logger().info('goal x' + str(self.goal_pose_x))
-            self.get_logger().info('goal y' + str(self.goal_pose_y))
-            self.get_logger().info('goal theta' + str(self.goal_pose_theta))
-
->>>>>>> Stashed changes
             self.get_key_state = True #this indicates if we have new user input to move based on
 
         else:
