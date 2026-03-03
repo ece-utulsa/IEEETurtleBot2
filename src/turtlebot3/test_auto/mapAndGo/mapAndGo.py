@@ -9,6 +9,7 @@ from launch import LaunchDescription
 from launch.actions import IncludeLaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from ament_index_python.packages import get_package_share_directory
+from launch import LaunchService
 
 from nav_msgs.msg import Odometry
 import numpy
@@ -64,7 +65,7 @@ class Turtlebot3CreateMap(Node):
         self.get_key_state = False
         self.init_odom_state = False
 
-        qos = QoSProfile(deth=10)
+        qos = QoSProfile(depth=10)
 
         self.cmd_vel_pub = self.create_publisher(CmdVelMsg, 'cmd_vel', qos)
 
@@ -75,7 +76,10 @@ class Turtlebot3CreateMap(Node):
             qos
         )
 
-        generate_launch_description
+        ld = generate_launch_description()
+        ls = LaunchService()
+        ls.include_launch_description(ld)
+        ls.run()
 
         self.update_timer = self.create_timer(0.010, self.update_callback)
 
