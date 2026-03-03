@@ -1,58 +1,91 @@
+#include <Wire.h>
 #include <Arduino.h>
-#include <Servo.h>
+#include <Adafruit_PWMServoDriver.h>
 
 // Relay for Electromagnet
 #define RELAY_PIN 7
 
 //Stepper Motors
-#define ENA_1 2
+#define ENA_1 7
 #define DIR_1 3
 #define STEP_1 4
 
+#define LIMIT_SWITCH 2
+bool limitTrigger = false;
+
 // Servos
-Servo leftServo;
-Servo rightServo;
-int servoPos = 0;
+Adafruit_PWMServoDriver servos = Adafruit_PWMServoDriver();
+#define SERVOMIN 100  // about 0 degrees
+#define SERVOMAX 500  // about 180 degrees
+#define SERVO_FREQ 50
+
+// Start Light Sensor
+#define PHOTOCELL_F A0
+#define PHOTOCELL_B A1
+#define LED 12
+int frontReading;
+int backReading;
+bool start = false;
+
+// Debouncing
+#define DEBOUNCE_DELAY 100
+unsigned long lastDebounceTime = 0;
 
 void setup() {
   Serial.begin(115200);  // USB serial to Pi
 
+  // Setup Start LED
+  pinMode(PHOTOCELL_F, INPUT);
+  pinMode(PHOTOCELL_B, INPUT);
+  pinMode(LED, OUTPUT);
+  digitalWrite(LED, HIGH);
+
+
   pinMode(RELAY_PIN, OUTPUT);
   digitalWrite(RELAY_PIN, LOW);  // relay off
 
-  // Setup Stepper Motors
+  // Setup Stepper Motor
   pinMode(ENA_1, OUTPUT);
   pinMode(DIR_1, OUTPUT);
   pinMode(STEP_1, OUTPUT);
   digitalWrite(ENA_1, LOW);
+  pinMode(LIMIT_SWITCH, INPUT_PULLUP);
+  attachInterrupt(digitalPinToInterrupt(LIMIT_SWITCH), switchInterrupt, FALLING);
 
-  leftServo.write(90);  // Prevent servo from jumping (hopefully)
-  rightServo.write(90);
-  delay(50);
-  leftServo.attach(8);
-  rightServo.attach(9);
+  // Setup Servos
+  servos.begin();
+  servos.setPWMFreq(SERVO_FREQ);
+  servos.setPWM(0, 0, SERVOMAX);
+  servos.setPWM(1, 0, SERVOMIN);
 }
 
 void loop() {
+  if (!start) {
+    start = startLED();
+  }
   if (Serial.available()) {  // command byte + 2 data bytes
     if (Serial.read() == 0xFF) {
       while (Serial.available() < 3)
         ;
-      uint8_t cmd = Serial.read();
+      uint8_t command = Serial.read();
       uint8_t data1 = Serial.read();
       uint8_t data2 = Serial.read();
 
-      switch (cmd) {
+      switch (command) {
         case 0x01:                  // Shovel Stepper
           motorStep(data1, data2);  // 0 = down, 1 = up
           Serial.write(0xAA);
           break;
-        case 0x02:  // Relay
-          setRelay(data1);
+        case 0x02:
+          motorFull(data1);
           Serial.write(0xAA);
           break;
         case 0x03:  // Servos
           turnServos(data1);
+          Serial.write(0xAA);
+          break;
+        case 0x04:  // Relay
+          setRelay(data1);
           Serial.write(0xAA);
           break;
         default:
@@ -61,6 +94,17 @@ void loop() {
       }
     }
   }
+}
+
+bool startLED() {
+  bool trigger = false;
+  frontReading = analogRead(PHOTOCELL_F);
+  backReading = analogRead(PHOTOCELL_B);
+  if (backReading - frontReading >= 200) {
+    trigger = true;
+    digitalWrite(LED, LOW);
+  }
+  return trigger;
 }
 
 void motorStep(int numSteps, int direction) {
@@ -78,6 +122,20 @@ void motorStep(int numSteps, int direction) {
   }
 }
 
+void motorFull(int direction) {
+  if (direction = 0) {
+    digitalWrite(DIR_1, LOW);
+    while (digitalRead(LIMIT_SWITCH) == LOW) {
+      digitalWrite(STEP_1, HIGH);
+      delay(1);
+      digitalWrite(STEP_1, LOW);
+      delay(1);
+    }
+  } else if (direction == 1) {
+    digitalWrite(DIR_1, HIGH);
+  }
+}
+
 void setRelay(int setting) {
   if (setting == 0x00) {
     digitalWrite(RELAY_PIN, LOW);  // OFF
@@ -87,14 +145,18 @@ void setRelay(int setting) {
 }
 
 void turnServos(int direction) {
-  for (servoPos = 0; servoPos < 180; servoPos++) {
-    if (direction == 0) {
-      leftServo.write(servoPos);
-      rightServo.write(180 - servoPos);
-    } else if (direction == 1) {
-      leftServo.write(180 - servoPos);
-      rightServo.write(servoPos);
-    }
-    delay(15);
+  if (direction == 0) {
+    servos.setPWM(0, 0, SERVOMIN);
+    servos.setPWM(1, 0, SERVOMAX);
+  } else if (direction == 1) {
+    servos.setPWM(0, 0, SERVOMAX);
+    servos.setPWM(1, 0, SERVOMIN);
+  }
+}
+
+void switchInterrupt() {
+  if (millis() - lastDebounceTime > DEBOUNCE_DELAY) {
+    limitTrigger = true;
+    lastDebounceTime = millis();
   }
 }

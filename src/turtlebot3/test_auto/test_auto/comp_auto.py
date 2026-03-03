@@ -57,8 +57,9 @@ class Turtlebot3RelativeMove(Node):
         return deg * 3.141592 / 180
 
     #I am not dealing with more python nonsense, just go with it
-    states = [(intom(12), 0, 0, "x"), (intom(12), 0, degtorad(-90), "theta"), (intom(12), intom(12), degtorad(-90), "y"), (intom(12), intom(12), degtorad(-90), "theta"), (0, intom(12), degtorad(-180), "x"), (0, intom(12), degtorad(90), "theta"), (0, 0, degtorad(90), "y"), (0, 0, 0, "theta")]
+    #states = [(intom(12), 0, 0, "x"), (intom(12), 0, degtorad(-90), "theta"), (intom(12), intom(12), degtorad(-90), "y"), (intom(12), intom(12), degtorad(-180), "theta"), (0, intom(12), degtorad(-180), "x"), (0, intom(12), degtorad(90), "theta"), (0, 0, degtorad(90), "y"), (0, 0, 0, "theta")]
     state = 0
+    states = [(0, 0, degtorad(90), "theta")]
 
     def __init__(self):
         super().__init__('turtlebot3_relative_move')
@@ -121,29 +122,44 @@ class Turtlebot3RelativeMove(Node):
             self.get_logger().info('no more states')
             twist.linear.x = 0
             twist.angular. z = 0
-        if not self.init_odom_state: #if we don't have new odometry data, no reason to move
+        elif not self.init_odom_state: #if we don't have new odometry data, no reason to move
             self.get_logger().info('no new odom')
             return
-        if not self.get_key_state:
+        elif not self.get_key_state:
             #self.goal_pose_x, self.goal_pose_y, self.goal_pose_theta = self.states[self.state][0:3]
             input_x, input_y, input_theta = self.states[self.state][0:3]
-            
+
             self.get_logger().info('set goal poses')
             input_x_global = ( #converting local input into global frame (i guess this will help)
-                math.cos(self.last_pose_theta) * input_x - math.sin(self.last_pose_theta) * input_y
+                math.cos(self.start_pose_theta) * input_x - math.sin(self.start_pose_theta) * input_y
             )
             input_y_global = (
-                math.sin(self.last_pose_theta) * input_x + math.cos(self.last_pose_theta) * input_y
+                math.sin(self.start_pose_theta) * input_x + math.cos(self.start_pose_theta) * input_y
             )
 
             self.goal_pose_x = self.last_pose_x + input_x_global
             self.goal_pose_y = self.last_pose_y + input_y_global
             self.goal_pose_theta = self.last_pose_theta + input_theta
+
             self.get_key_state = True #this indicates if we have new user input to move based on
 
         else:
             self.get_logger().info('array state ' + str(self.state))
             self.get_logger().info('what should we do ' + str(self.states[self.state][3]))
+            #make goal between 0 and 2pi
+            if self.goal_pose_theta > 6.3: #does it really need to be while?
+                self.goal_pose_theta = self.goal_pose_theta - 6.28
+                self.get_logger().info('subtracted 2pi from goal')
+            if self.goal_pose_theta < -0.1:
+                self.goal_pose_theta = self.goal_pose_theta + 6.28
+                self.get_logger().info('added 2pi to goal')
+            #make current between 0 and 2pi
+            if self.last_pose_theta > 6.3: #does it really need to be while?
+                self.last_pose_theta = self.last_pose_theta - 6.28
+                self.get_logger().info('subtracted 2pi from last')
+            if self.last_pose_theta < -0.1:
+                self.last_pose_theta = self.last_pose_theta + 6.28
+                self.get_logger().info('added 2pi to last')
             deltay = self.goal_pose_y - self.last_pose_y
             deltax = self.goal_pose_x - self.last_pose_x
             deltat = self.goal_pose_theta - self.last_pose_theta
@@ -167,16 +183,7 @@ class Turtlebot3RelativeMove(Node):
             #turn
             elif (self.states[self.state][3] == "theta") and abs(deltat) > 0.1:
                 if deltat > 0.05: #this number may need to change
-                    '''#make it between -pi and pi
-                    while self.goal_pose_theta > 6.30:
-                        self.goal_pose_theta = self.goal_pose_theta - 6.28
-                    while self.goal_pose_theta < -6.30:
-                        self.goal_pose_theta = self.goal_pose_theta + 6.28
-                    while self.last_pose_theta > 6.3:
-                        self.last_pose_theta = self.last_pose_theta - 6.28
-                    while self.last_pose_theta < -6.3:
-                        self.last_pose_theta = self.last_pose_theta + 6.28'''
-                    twist.angular.z = 0.5
+                    twist.angular.z = 0.5 #can't flip this or it will oscillate around -1.5 (pi/2)
                     self.get_logger().info('z (goal, curr) ' + str(self.goal_pose_theta) + ' ' + str(self.last_pose_theta))
                 elif deltat < -0.05: #if it drifted slightly, that's ok, we're ignoring that
                     twist.angular.z = -0.5

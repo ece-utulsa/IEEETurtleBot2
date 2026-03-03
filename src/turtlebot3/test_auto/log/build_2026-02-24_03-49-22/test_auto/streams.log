@@ -1,0 +1,47 @@
+[7.041s] Invoking command in '/home/robotics/desktop_ws/IEEETurtleBot2/src/turtlebot3/test_auto': PYTHONPATH=/home/robotics/desktop_ws/IEEETurtleBot2/src/turtlebot3/test_auto/build/test_auto/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/robotics/desktop_ws/IEEETurtleBot2/src/turtlebot3/test_auto/install/test_auto/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base build/test_auto build --build-base /home/robotics/desktop_ws/IEEETurtleBot2/src/turtlebot3/test_auto/build/test_auto/build install --record /home/robotics/desktop_ws/IEEETurtleBot2/src/turtlebot3/test_auto/build/test_auto/install.log --single-version-externally-managed install_data
+[9.933s] running egg_info
+[9.939s] creating build/test_auto/test_auto.egg-info
+[9.941s] writing build/test_auto/test_auto.egg-info/PKG-INFO
+[9.943s] writing dependency_links to build/test_auto/test_auto.egg-info/dependency_links.txt
+[9.945s] writing entry points to build/test_auto/test_auto.egg-info/entry_points.txt
+[9.946s] writing requirements to build/test_auto/test_auto.egg-info/requires.txt
+[9.947s] writing top-level names to build/test_auto/test_auto.egg-info/top_level.txt
+[9.949s] writing manifest file 'build/test_auto/test_auto.egg-info/SOURCES.txt'
+[9.965s] reading manifest file 'build/test_auto/test_auto.egg-info/SOURCES.txt'
+[9.967s] adding license file 'LICENSE'
+[9.975s] writing manifest file 'build/test_auto/test_auto.egg-info/SOURCES.txt'
+[9.976s] running build
+[9.977s] running build_py
+[9.979s] creating /home/robotics/desktop_ws/IEEETurtleBot2/src/turtlebot3/test_auto/build/test_auto/build
+[9.980s] creating /home/robotics/desktop_ws/IEEETurtleBot2/src/turtlebot3/test_auto/build/test_auto/build/lib
+[9.981s] creating /home/robotics/desktop_ws/IEEETurtleBot2/src/turtlebot3/test_auto/build/test_auto/build/lib/test_auto
+[9.982s] copying test_auto/__init__.py -> /home/robotics/desktop_ws/IEEETurtleBot2/src/turtlebot3/test_auto/build/test_auto/build/lib/test_auto
+[9.983s] copying test_auto/comp_auto.py -> /home/robotics/desktop_ws/IEEETurtleBot2/src/turtlebot3/test_auto/build/test_auto/build/lib/test_auto
+[9.987s] copying test_auto/test_auto.py -> /home/robotics/desktop_ws/IEEETurtleBot2/src/turtlebot3/test_auto/build/test_auto/build/lib/test_auto
+[9.991s] copying test_auto/piPub.py -> /home/robotics/desktop_ws/IEEETurtleBot2/src/turtlebot3/test_auto/build/test_auto/build/lib/test_auto
+[9.995s] running install
+[9.998s] running install_lib
+[10.005s] creating /home/robotics/desktop_ws/IEEETurtleBot2/src/turtlebot3/test_auto/install/test_auto/lib/python3.10/site-packages/test_auto
+[10.006s] copying /home/robotics/desktop_ws/IEEETurtleBot2/src/turtlebot3/test_auto/build/test_auto/build/lib/test_auto/__init__.py -> /home/robotics/desktop_ws/IEEETurtleBot2/src/turtlebot3/test_auto/install/test_auto/lib/python3.10/site-packages/test_auto
+[10.008s] copying /home/robotics/desktop_ws/IEEETurtleBot2/src/turtlebot3/test_auto/build/test_auto/build/lib/test_auto/comp_auto.py -> /home/robotics/desktop_ws/IEEETurtleBot2/src/turtlebot3/test_auto/install/test_auto/lib/python3.10/site-packages/test_auto
+[10.010s] copying /home/robotics/desktop_ws/IEEETurtleBot2/src/turtlebot3/test_auto/build/test_auto/build/lib/test_auto/test_auto.py -> /home/robotics/desktop_ws/IEEETurtleBot2/src/turtlebot3/test_auto/install/test_auto/lib/python3.10/site-packages/test_auto
+[10.013s] copying /home/robotics/desktop_ws/IEEETurtleBot2/src/turtlebot3/test_auto/build/test_auto/build/lib/test_auto/piPub.py -> /home/robotics/desktop_ws/IEEETurtleBot2/src/turtlebot3/test_auto/install/test_auto/lib/python3.10/site-packages/test_auto
+[10.020s] byte-compiling /home/robotics/desktop_ws/IEEETurtleBot2/src/turtlebot3/test_auto/install/test_auto/lib/python3.10/site-packages/test_auto/__init__.py to __init__.cpython-310.pyc
+[10.023s] byte-compiling /home/robotics/desktop_ws/IEEETurtleBot2/src/turtlebot3/test_auto/install/test_auto/lib/python3.10/site-packages/test_auto/comp_auto.py to comp_auto.cpython-310.pyc
+[10.041s] byte-compiling /home/robotics/desktop_ws/IEEETurtleBot2/src/turtlebot3/test_auto/install/test_auto/lib/python3.10/site-packages/test_auto/test_auto.py to test_auto.cpython-310.pyc
+[10.056s] byte-compiling /home/robotics/desktop_ws/IEEETurtleBot2/src/turtlebot3/test_auto/install/test_auto/lib/python3.10/site-packages/test_auto/piPub.py to piPub.cpython-310.pyc
+[10.061s] running install_data
+[10.063s] creating /home/robotics/desktop_ws/IEEETurtleBot2/src/turtlebot3/test_auto/install/test_auto/share/ament_index
+[10.064s] creating /home/robotics/desktop_ws/IEEETurtleBot2/src/turtlebot3/test_auto/install/test_auto/share/ament_index/resource_index
+[10.065s] creating /home/robotics/desktop_ws/IEEETurtleBot2/src/turtlebot3/test_auto/install/test_auto/share/ament_index/resource_index/packages
+[10.066s] copying resource/test_auto -> /home/robotics/desktop_ws/IEEETurtleBot2/src/turtlebot3/test_auto/install/test_auto/share/ament_index/resource_index/packages
+[10.067s] copying package.xml -> /home/robotics/desktop_ws/IEEETurtleBot2/src/turtlebot3/test_auto/install/test_auto/share/test_auto
+[10.068s] running install_egg_info
+[10.087s] Copying build/test_auto/test_auto.egg-info to /home/robotics/desktop_ws/IEEETurtleBot2/src/turtlebot3/test_auto/install/test_auto/lib/python3.10/site-packages/test_auto-0.0.0-py3.10.egg-info
+[10.102s] running install_scripts
+[10.314s] Installing comp_auto script to /home/robotics/desktop_ws/IEEETurtleBot2/src/turtlebot3/test_auto/install/test_auto/lib/test_auto
+[10.365s] Installing map_go script to /home/robotics/desktop_ws/IEEETurtleBot2/src/turtlebot3/test_auto/install/test_auto/lib/test_auto
+[10.366s] Installing piPub script to /home/robotics/desktop_ws/IEEETurtleBot2/src/turtlebot3/test_auto/install/test_auto/lib/test_auto
+[10.368s] Installing test_auto script to /home/robotics/desktop_ws/IEEETurtleBot2/src/turtlebot3/test_auto/install/test_auto/lib/test_auto
+[10.371s] writing list of installed files to '/home/robotics/desktop_ws/IEEETurtleBot2/src/turtlebot3/test_auto/build/test_auto/install.log'
+[10.522s] Invoked command in '/home/robotics/desktop_ws/IEEETurtleBot2/src/turtlebot3/test_auto' returned '0': PYTHONPATH=/home/robotics/desktop_ws/IEEETurtleBot2/src/turtlebot3/test_auto/build/test_auto/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/robotics/desktop_ws/IEEETurtleBot2/src/turtlebot3/test_auto/install/test_auto/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base build/test_auto build --build-base /home/robotics/desktop_ws/IEEETurtleBot2/src/turtlebot3/test_auto/build/test_auto/build install --record /home/robotics/desktop_ws/IEEETurtleBot2/src/turtlebot3/test_auto/build/test_auto/install.log --single-version-externally-managed install_data

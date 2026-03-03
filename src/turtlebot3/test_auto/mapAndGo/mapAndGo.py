@@ -69,19 +69,19 @@ class Turtlebot3CreateMap(Node):
 
         self.cmd_vel_pub = self.create_publisher(CmdVelMsg, 'cmd_vel', qos)
 
-        self.odom_sub = self.create_subscription(
-            Odometry,
-            'odom',
-            self.odom_callback,
-            qos
-        )
+        #self.odom_sub = self.create_subscription(
+        #    Odometry,
+        #    'odom',
+        #    self.odom_callback,
+        #    qos
+        #)
 
         ld = generate_launch_description()
         ls = LaunchService()
         ls.include_launch_description(ld)
         ls.run()
 
-        self.update_timer = self.create_timer(0.010, self.update_callback)
+        #self.update_timer = self.create_timer(0.010, self.update_callback)
 
         self.get_logger().info('TurtleBot3 create map node has been initialized.')
 
