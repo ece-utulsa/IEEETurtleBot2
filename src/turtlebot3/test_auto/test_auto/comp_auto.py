@@ -200,6 +200,7 @@ class Turtlebot3RelativeMove(Node):
             else:
                 self.state = self.state + 1
                 self.get_key_state = False 
+                self.init_odom_state = False #TODO
 
             if ros_distro == 'humble':
                 self.cmd_vel_pub.publish(twist)
