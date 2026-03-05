@@ -63,9 +63,9 @@ class Turtlebot3RelativeMove(Node):
         return (x, y, theta)
     
     def starttoworld(self, x, y, theta):
-        x = self.start_pose_x - x
-        y = self.start_pose_y - y
-        theta = self.start_pose_theta - theta
+        x = x - self.start_pose_x
+        y = x - self.start_pose_y
+        theta = theta - self.start_pose_theta
         return (x, y, theta)
 
     #I am not dealing with more python nonsense, just go with it
@@ -114,6 +114,7 @@ class Turtlebot3RelativeMove(Node):
             self.start_pose_theta = self.euler_from_quaternion(msg.pose.pose.orientation)[2]
             self.odom_reset = True
 
+        #this puts our numbers back as if we started at 0,0,0
         self.last_pose_x, self.last_pose_y, self.last_pose_theta = self.starttoworld(msg.pose.pose.position.x, msg.pose.pose.position.y, self.euler_from_quaternion(msg.pose.pose.orientation)[2])
 
         self.get_logger().info('msg data ' + str(msg.pose.pose.position.x) + " " + str(msg.pose.pose.position.y) + ' ' + str(self.euler_from_quaternion(msg.pose.pose.orientation)[2]))
