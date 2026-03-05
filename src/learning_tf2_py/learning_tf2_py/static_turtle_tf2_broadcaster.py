@@ -128,7 +128,15 @@ class StaticFramePublisher(Node):
             t.transform.rotation.y = self.last_quat_y
             t.transform.rotation.z = self.last_quat_z
             t.transform.rotation.w = self.last_quat_w
-
+            
+            self.get_logger().info("x " + str(self.last_pose_x))
+            self.get_logger().info("y " + str(self.last_pose_y))
+            self.get_logger().info("z " + str(self.last_pose_z))
+            self.get_logger().info("qx " + str(self.last_quat_x))
+            self.get_logger().info("qy " + str(self.last_quat_y))
+            self.get_logger().info("qz " + str(self.last_quat_z))
+            self.get_logger().info("qw " + str(self.last_quat_w))
+            
             self.tf_static_broadcaster.sendTransform(t)
 
             self.get_logger().info("sent transform")

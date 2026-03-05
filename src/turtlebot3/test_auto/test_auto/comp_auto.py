@@ -29,6 +29,8 @@ from tf2_ros import TransformException
 from tf2_ros.buffer import Buffer
 from tf2_ros.transform_listener import TransformListener
 
+import tf2_geometry_msgs.tf2_geometry_msgs
+
 ros_distro = os.environ.get('ROS_DISTRO', 'humble').lower()
 if ros_distro == 'humble':
     from geometry_msgs.msg import Twist as CmdVelMsg
@@ -125,11 +127,36 @@ class Turtlebot3RelativeMove(Node):
             self.start_pose_theta = self.euler_from_quaternion(msg.pose.pose.orientation)[2]
             self.odom_reset = True
 
-        #this puts our numbers back as if we started at 0,0,0
-        self.last_pose_x, self.last_pose_y, self.last_pose_theta = self.starttoworld(msg.pose.pose.position.x, msg.pose.pose.position.y, self.euler_from_quaternion(msg.pose.pose.orientation)[2])
+        try: 
+            #lookup transform between robot_start and odom
+            t = self.tf_buffer.lookup_transform(
+                'odom', #to frame rel (target frame)
+                'robot_start', #from frame rel (source frame)
+                rclpy.time.Time())
+            self.get_logger().info(str(t))
+        except TransformException as ex:
+            self.get_logger().info(
+                f'Could not transform: {ex}')
+            return
+        """
+        Transform a `PointStamped` using a given `TransformStamped`.
 
-        self.get_logger().info('msg data ' + str(msg.pose.pose.position.x) + " " + str(msg.pose.pose.position.y) + ' ' + str(self.euler_from_quaternion(msg.pose.pose.orientation)[2]))
-        self.get_logger().info('mtd data ' + str(self.last_pose_x) + " " + str(self.last_pose_y) + ' ' + str(self.last_pose_theta))
+        :param point: The point
+        :param transform: The transform
+        :returns: The transformed point
+        """
+        current_pos_in_odom_frame = do_transform_point(msg.pose.pose, 'odom')
+        self.last_pose_x = msg.pose.pose.position.x - t.transform.translation.x
+        self.last_pose_y = msg.pose.pose.position.y - t.transform.translation.y
+        self.last_pose_theta = self.euler_from_quaternion(msg.pose.pose.orientation)[2] - self.euler_from_quaternion(t.transform.rotation)[2]
+        
+        #this puts our numbers back as if we started at 0,0,but not theta correctly
+        #self.last_pose_x, self.last_pose_y, self.last_pose_theta = self.starttoworld(msg.pose.pose.position.x, msg.pose.pose.position.y, self.euler_from_quaternion(msg.pose.pose.orientation)[2])
+
+        self.get_logger().info('do transform point ' + str(current_pos_in_odom_frame))
+        self.get_logger().info('ipt data ' + str(msg.pose.pose.position.x) + " " + str(msg.pose.pose.position.y) + ' ' + str(self.euler_from_quaternion(msg.pose.pose.orientation)[2]))
+        self.get_logger().info('tns data ' + str(t.transform.translation.x) + " " + str(t.transform.translation.y) + ' ' + str(self.euler_from_quaternion(t.transform.rotation)[2]))
+        self.get_logger().info('out data ' + str(self.last_pose_x) + " " + str(self.last_pose_y) + ' ' + str(self.last_pose_theta))
         self.init_odom_state = True #this tells us whether we should trust the data in last_pose
 
     #if we have new odometry data, make a new path
@@ -148,8 +175,8 @@ class Turtlebot3RelativeMove(Node):
             self.get_logger().info('no new odom')
             return
         elif not self.get_key_state:
-            #self.goal_pose_x, self.goal_pose_y, self.goal_pose_theta = self.states[self.state][0:3]
-            input_x, input_y, input_theta = self.states[self.state][0:3]
+            self.goal_pose_x, self.goal_pose_y, self.goal_pose_theta = self.states[self.state][0:3]
+            #input_x, input_y, input_theta = self.states[self.state][0:3]
 
             '''self.get_logger().info('set goal poses')
             input_x_global = ( #converting local input into global frame (i guess this will help)
@@ -168,25 +195,9 @@ class Turtlebot3RelativeMove(Node):
             self.goal_pose_theta = input_theta - self.start_pose_theta '''
 
             #self.goal_pose_x, self.goal_pose_y, self.goal_pose_theta = self.worldtostart(input_x, input_y, input_theta)
-            try: 
-                #lookup transform between robot_start and odom
-                t = self.tf_buffer.lookup_transform(
-                    'odom', #to frame rel (target frame)
-                    'robot_start', #from frame rel (source frame)
-                    rclpy.time.Time())
-                self.get_logger().info(str(t))
-            except TransformException as ex:
-                self.get_logger().info(
-                    f'Could not transform: {ex}')
-                return
-            
-            self.goal_pose_x = input_x + t.transform.translation.x
-            self.goal_pose_y = input_y + t.transform.translation.y
-            self.goal_pose_theta = input_theta + self.euler_from_quaternion(t.transform.rotation)[2]
 
-            self.get_logger().info('input data ' + str(input_x) + " " + str(input_y) + ' ' + str(input_theta))
-            self.get_logger().info('trans data ' + str(t.transform.translation.x) + " " + str(t.transform.translation.y) + ' ' + str(self.euler_from_quaternion(t.transform.rotation)[2]))
-            self.get_logger().info('mathd data ' + str(self.goal_pose_x) + " " + str(self.goal_pose_y) + ' ' + str(self.goal_pose_theta))
+            #self.get_logger().info('input data ' + str(input_x) + " " + str(input_y) + ' ' + str(input_theta))
+            self.get_logger().info('goal data ' + str(self.goal_pose_x) + " " + str(self.goal_pose_y) + ' ' + str(self.goal_pose_theta))
 
             self.get_key_state = True #this indicates if we have new user input to move based on
 
