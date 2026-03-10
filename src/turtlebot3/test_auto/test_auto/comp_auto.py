@@ -42,7 +42,7 @@ rows, cols = (4, 8)
 field = [[0 for i in range(cols)] for j in range(rows)]
 field[3][2] = 1 #starting sqaure (there are obviously no astroids here, but whatever)
 
-teleFreq = 0.5
+teleFreq = 0.2
 
 #I copied this class exactly from Michael's multicontrol mynode, idk where he got it from; used to hopefully help stop the idiot at the end
 class SigintSkipper:
@@ -79,9 +79,9 @@ class Turtlebot3RelativeMove(Node):
         return (x, y, theta)
 
     #I am not dealing with more python nonsense, just go with it
-    #states = [(intom(12), 0, 0, "x"), (intom(12), 0, degtorad(-90), "theta"), (intom(12), intom(12), degtorad(-90), "y"), (intom(12), intom(12), degtorad(-180), "theta"), (0, intom(12), degtorad(-180), "x"), (0, intom(12), degtorad(90), "theta"), (0, 0, degtorad(90), "y"), (0, 0, 0, "theta")]
+    states = [(intom(-12), 0, 0, "x"), (intom(-12), 0, degtorad(-90), "theta"), (intom(-12), intom(-12), degtorad(-90), "y"), (intom(-12), intom(-12), degtorad(-180), "theta")] #, (0, intom(-12), degtorad(-180), "x"), (0, intom(-12), degtorad(90), "theta"), (0, 0, degtorad(90), "y"), (0, 0, 0, "theta")]
     state = 0
-    states = [(intom(-12), 0, 0, "x"), (0, 0, degtorad(90), "theta"), (0, intom(12), 0, "y")]
+    #states = [(intom(-12), 0, 0, "x"), (0, 0, 0, "x"), (intom(-12), 0, 0, "x"), (0, 0, 0, "x"),(intom(-12), 0, 0, "x"), (0, 0, 0, "x"),(intom(-12), 0, 0, "x"), (0, 0, 0, "x"), (intom(-12), 0, 0, "x"), (0, 0, 0, "x"), (intom(-12), 0, 0, "x"), (0, 0, 0, "x"),(intom(-12), 0, 0, "x"), (0, 0, 0, "x"),(intom(-12), 0, 0, "x"), (0, 0, 0, "x")]
 
     def __init__(self):
         super().__init__('turtlebot3_relative_move')
@@ -222,24 +222,24 @@ class Turtlebot3RelativeMove(Node):
             deltax = self.goal_pose_x - self.last_pose_x
             deltat = self.goal_pose_theta - self.last_pose_theta
             #straight
-            if (self.states[self.state][3] == "y") and abs(deltay) > 0.1:
-                if (deltay > 0.1): #this may need to change for precision's sake
-                    twist.linear.x = 0.075 #change this for speed
+            if (self.states[self.state][3] == "y") and abs(deltay) > 0.05:
+                if (deltay > 0.05): #this may need to change for precision's sake
+                    twist.linear.x = -0.075 #change this for speed
                     self.get_logger().info('y (goal, curr) ' + str(self.goal_pose_y) + ' ' + str(self.last_pose_y), skip_first=True, throttle_duration_sec=teleFreq) #add telemetry
-                elif (deltay < -0.1):
-                    twist.linear.x = -0.075 #apparently x is robot centric forward
+                elif (deltay < -0.05):
+                    twist.linear.x = 0.075 #apparently x is robot centric forward
                     self.get_logger().info('-y (goal, curr) ' + str(self.goal_pose_y) + ' ' + str(self.last_pose_y), skip_first=True, throttle_duration_sec=teleFreq)
 
-            elif (self.states[self.state][3] == "x") and abs(deltax) > 0.1:
-                if (deltax > 0.1): #this may need to change for precision's sake
+            elif (self.states[self.state][3] == "x") and abs(deltax) > 0.05:
+                if (deltax > 0.05): #this may need to change for precision's sake
                     twist.linear.x = 0.075 #change this for speed
                     self.get_logger().info('x (goal, curr) ' + str(self.goal_pose_x) + ' ' + str(self.last_pose_x), skip_first=True, throttle_duration_sec=teleFreq) #add telemetry
-                elif (deltax) < -0.1:
+                elif (deltax) < -0.05:
                     twist.linear.x = -0.075
                     self.get_logger().info('-x (goal, curr) ' + str(self.goal_pose_x) + ' ' + str(self.last_pose_x), skip_first=True, throttle_duration_sec=teleFreq)
 
             #turn
-            elif (self.states[self.state][3] == "theta") and abs(deltat) > 0.1:
+            elif (self.states[self.state][3] == "theta") and abs(deltat) > 0.05:
                 if deltat > 0.05: #this number may need to change
                     twist.angular.z = 0.5
                     self.get_logger().info('z (goal, curr) ' + str(self.goal_pose_theta) + ' ' + str(self.last_pose_theta), skip_first=True, throttle_duration_sec=0.1)
