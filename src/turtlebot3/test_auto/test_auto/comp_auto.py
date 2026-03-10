@@ -13,6 +13,7 @@ Maybe we could do a fancy math equation and calculate how much time we have left
 to decide when exactly we need to leave to move the CSCs, but probably by the last 30 seconds (endgame anyone??? lol) 
 '''
 import math
+import numpy
 import os
 import sys
 import termios
@@ -40,6 +41,8 @@ else:
 rows, cols = (4, 8)
 field = [[0 for i in range(cols)] for j in range(rows)]
 field[3][2] = 1 #starting sqaure (there are obviously no astroids here, but whatever)
+
+teleFreq = 0.5
 
 #I copied this class exactly from Michael's multicontrol mynode, idk where he got it from; used to hopefully help stop the idiot at the end
 class SigintSkipper:
@@ -117,46 +120,42 @@ class Turtlebot3RelativeMove(Node):
         self.update_timer = self.create_timer(0.010, self.update_callback) #call that function every 0.01 seconds, i think it does start automatically, idk why it needs to go into a variable
 
         self.get_logger().info('TurtleBot3 relative move node has been initialised.') #log a message with INFO severity (into the log file i guess, you can find it somewhere in rviz? go ask the ros tutorial)
-    #this came from here https://stackoverflow.com/questions/74976911/create-an-odometry-publisher-node-in-python-ros2
-    #its gone, i dont think it worked
     #this sets of previous (current) position based on the odometry data (better hope its correct)
     def odom_callback(self, msg): #function called when we get data from odometry subscription
-        if(not self.odom_reset): 
-            self.start_pose_x = msg.pose.pose.position.x
-            self.start_pose_y = msg.pose.pose.position.y
-            self.start_pose_theta = self.euler_from_quaternion(msg.pose.pose.orientation)[2]
-            self.odom_reset = True
+        #self.last_pose_x, self.last_pose_y, self.last_pose_theta = msg.pose.pose.position.x, msg.pose.pose.position.y, self.euler_from_quaternion(msg.pose.pose.orientation)[2]
+        msg_x, msg_y, msg_theta = msg.pose.pose.position.x, msg.pose.pose.position.y, self.euler_from_quaternion(msg.pose.pose.orientation)[2]
 
         try: 
             #lookup transform between robot_start and odom
             t = self.tf_buffer.lookup_transform(
-                'odom', #to frame rel (target frame)
-                'robot_start', #from frame rel (source frame)
+                'robot_start', #to frame rel (target frame)
+                'odom', #from frame rel (source frame)
                 rclpy.time.Time())
-            self.get_logger().info(str(t))
         except TransformException as ex:
             self.get_logger().info(
                 f'Could not transform: {ex}')
             return
-        """
-        Transform a `PointStamped` using a given `TransformStamped`.
 
-        :param point: The point
-        :param transform: The transform
-        :returns: The transformed point
-        """
-        current_pos_in_odom_frame = do_transform_point(msg.pose.pose, 'odom')
-        self.last_pose_x = msg.pose.pose.position.x - t.transform.translation.x
-        self.last_pose_y = msg.pose.pose.position.y - t.transform.translation.y
-        self.last_pose_theta = self.euler_from_quaternion(msg.pose.pose.orientation)[2] - self.euler_from_quaternion(t.transform.rotation)[2]
+        #A = RB + x is the transformation we need https://stanbaek.github.io/ece387/Labs/Lab7_TF.html
+        #we are changing world odom frames into relative to robot start (12in in front of robot's starting position)
+
+        x = t.transform.translation.x
+        y = t.transform.translation.y
+        theta = self.euler_from_quaternion(t.transform.rotation)[2]
+
+        R = [[numpy.cos(theta), -numpy.sin(theta)], [numpy.sin(theta), numpy.cos(theta)]]
+        RB = numpy.matmul(R, [msg_x, msg_y]) 
+
+        A = RB + [x, y]
+
+        self.last_pose_x, self.last_pose_y = A
+        self.last_pose_theta = theta + msg_theta
         
-        #this puts our numbers back as if we started at 0,0,but not theta correctly
-        #self.last_pose_x, self.last_pose_y, self.last_pose_theta = self.starttoworld(msg.pose.pose.position.x, msg.pose.pose.position.y, self.euler_from_quaternion(msg.pose.pose.orientation)[2])
 
-        self.get_logger().info('do transform point ' + str(current_pos_in_odom_frame))
-        self.get_logger().info('ipt data ' + str(msg.pose.pose.position.x) + " " + str(msg.pose.pose.position.y) + ' ' + str(self.euler_from_quaternion(msg.pose.pose.orientation)[2]))
-        self.get_logger().info('tns data ' + str(t.transform.translation.x) + " " + str(t.transform.translation.y) + ' ' + str(self.euler_from_quaternion(t.transform.rotation)[2]))
-        self.get_logger().info('out data ' + str(self.last_pose_x) + " " + str(self.last_pose_y) + ' ' + str(self.last_pose_theta))
+        self.get_logger().info('msg    data ' + str(msg_x) + " " + str(msg_y) + ' ' + str(msg_theta), skip_first=True, throttle_duration_sec=teleFreq)
+        self.get_logger().info('trans  data ' + str(x) + str(y) + str(theta), skip_first=True, throttle_duration_sec=teleFreq)
+        
+        self.get_logger().info('output data ' + str(self.last_pose_x) + " " + str(self.last_pose_y) + ' ' + str(self.last_pose_theta), skip_first=True, throttle_duration_sec=teleFreq)
         self.init_odom_state = True #this tells us whether we should trust the data in last_pose
 
     #if we have new odometry data, make a new path
@@ -175,43 +174,43 @@ class Turtlebot3RelativeMove(Node):
             self.get_logger().info('no new odom')
             return
         elif not self.get_key_state:
+
             self.goal_pose_x, self.goal_pose_y, self.goal_pose_theta = self.states[self.state][0:3]
-            #input_x, input_y, input_theta = self.states[self.state][0:3]
+            '''input_x, input_y, input_theta = self.states[self.state][0:3]
 
-            '''self.get_logger().info('set goal poses')
-            input_x_global = ( #converting local input into global frame (i guess this will help)
-                math.cos(self.start_pose_theta) * input_x - math.sin(self.start_pose_theta) * input_y
-            )
-            input_y_global = (
-                math.sin(self.start_pose_theta) * input_x + math.cos(self.start_pose_theta) * input_y
-            )
+            #A = RB + x is the transformation we need https://stanbaek.github.io/ece387/Labs/Lab7_TF.html
+            #we are changing robot-start-relative frames (12in in front of robot's starting position) to world frames (which is what odom data is in)
 
-            self.goal_pose_x = self.last_pose_x + input_x_global
-            self.goal_pose_y = self.last_pose_y + input_y_global
-            self.goal_pose_theta = self.last_pose_theta + input_theta
+            x = t.transform.translation.x
+            y = t.transform.translation.y
+            theta = self.euler_from_quaternion(t.transform.rotation)[2]
 
-            self.goal_pose_x = input_x - self.start_pose_x
-            self.goal_pose_y = input_y - self.start_pose_y
-            self.goal_pose_theta = input_theta - self.start_pose_theta '''
+            R = [[numpy.cos(theta), -numpy.sin(theta)], [numpy.sin(theta), numpy.cos(theta)]]
+            RB = numpy.matmul(R, [input_x, input_y]) 
 
-            #self.goal_pose_x, self.goal_pose_y, self.goal_pose_theta = self.worldtostart(input_x, input_y, input_theta)
+            A = RB + [x, y]
 
-            #self.get_logger().info('input data ' + str(input_x) + " " + str(input_y) + ' ' + str(input_theta))
-            self.get_logger().info('goal data ' + str(self.goal_pose_x) + " " + str(self.goal_pose_y) + ' ' + str(self.goal_pose_theta))
+            self.goal_pose_x, self.goal_pose_y = A
+            self.goal_pose_theta = theta + input_theta
+            
+
+            self.get_logger().info('input data ' + str(input_x) + " " + str(input_y) + ' ' + str(input_theta))
+            self.get_logger().info('trans data ' + str(x) + str(y) + str(theta))'''
+            self.get_logger().info('goal  data ' + str(self.goal_pose_x) + " " + str(self.goal_pose_y) + ' ' + str(self.goal_pose_theta), skip_first=True, throttle_duration_sec=teleFreq)
 
             self.get_key_state = True #this indicates if we have new user input to move based on
 
         else:
-            self.get_logger().info('array state ' + str(self.state))
-            self.get_logger().info('what should we do ' + str(self.states[self.state][3]))
-            #make goal between 0 and 2pi
+            self.get_logger().info('array state ' + str(self.state), skip_first=True, throttle_duration_sec=teleFreq)
+            self.get_logger().info('what should we do ' + str(self.states[self.state][3]), skip_first=True, throttle_duration_sec=teleFreq)
+            #make goal between 0 and 2pi - TODO: not sure this is nec, lets see what our path looks like
             if self.goal_pose_theta > 6.3: #does it really need to be while?
                 self.goal_pose_theta = self.goal_pose_theta - 6.28
                 self.get_logger().info('subtracted 2pi from goal')
             if self.goal_pose_theta < -0.1:
                 self.goal_pose_theta = self.goal_pose_theta + 6.28
                 self.get_logger().info('added 2pi to goal')
-            #make current between 0 and 2pi
+            #make current between 0 and 2pi - TODO: not sure this is nec, lets see what our path looks like
             if self.last_pose_theta > 6.3: #does it really need to be while?
                 self.last_pose_theta = self.last_pose_theta - 6.28
                 self.get_logger().info('subtracted 2pi from last')
@@ -225,28 +224,28 @@ class Turtlebot3RelativeMove(Node):
             #straight
             if (self.states[self.state][3] == "y") and abs(deltay) > 0.1:
                 if (deltay > 0.1): #this may need to change for precision's sake
-                    twist.linear.x = -0.075 #change this for speed
-                    self.get_logger().info('y (goal, curr) ' + str(self.goal_pose_y) + ' ' + str(self.last_pose_y)) #add telemetry
+                    twist.linear.x = 0.075 #change this for speed
+                    self.get_logger().info('y (goal, curr) ' + str(self.goal_pose_y) + ' ' + str(self.last_pose_y), skip_first=True, throttle_duration_sec=teleFreq) #add telemetry
                 elif (deltay < -0.1):
-                    twist.linear.x = 0.075 #apparently x is robot centric forward
-                    self.get_logger().info('-y (goal, curr) ' + str(self.goal_pose_y) + ' ' + str(self.last_pose_y))
+                    twist.linear.x = -0.075 #apparently x is robot centric forward
+                    self.get_logger().info('-y (goal, curr) ' + str(self.goal_pose_y) + ' ' + str(self.last_pose_y), skip_first=True, throttle_duration_sec=teleFreq)
 
             elif (self.states[self.state][3] == "x") and abs(deltax) > 0.1:
                 if (deltax > 0.1): #this may need to change for precision's sake
                     twist.linear.x = 0.075 #change this for speed
-                    self.get_logger().info('x (goal, curr) ' + str(self.goal_pose_x) + ' ' + str(self.last_pose_x)) #add telemetry
+                    self.get_logger().info('x (goal, curr) ' + str(self.goal_pose_x) + ' ' + str(self.last_pose_x), skip_first=True, throttle_duration_sec=teleFreq) #add telemetry
                 elif (deltax) < -0.1:
                     twist.linear.x = -0.075
-                    self.get_logger().info('-x (goal, curr) ' + str(self.goal_pose_x) + ' ' + str(self.last_pose_x))
+                    self.get_logger().info('-x (goal, curr) ' + str(self.goal_pose_x) + ' ' + str(self.last_pose_x), skip_first=True, throttle_duration_sec=teleFreq)
 
             #turn
             elif (self.states[self.state][3] == "theta") and abs(deltat) > 0.1:
                 if deltat > 0.05: #this number may need to change
-                    twist.angular.z = 0.5 #can't flip this or it will oscillate around -1.5 (pi/2)
-                    self.get_logger().info('z (goal, curr) ' + str(self.goal_pose_theta) + ' ' + str(self.last_pose_theta))
+                    twist.angular.z = 0.5
+                    self.get_logger().info('z (goal, curr) ' + str(self.goal_pose_theta) + ' ' + str(self.last_pose_theta), skip_first=True, throttle_duration_sec=0.1)
                 elif deltat < -0.05: #if it drifted slightly, that's ok, we're ignoring that
                     twist.angular.z = -0.5
-                    self.get_logger().info('-z (goal, curr) ' + str(self.goal_pose_theta) + ' ' + str(self.last_pose_theta))
+                    self.get_logger().info('-z (goal, curr) ' + str(self.goal_pose_theta) + ' ' + str(self.last_pose_theta), skip_first=True, throttle_duration_sec=0.1)
             else:
                 self.state = self.state + 1
                 self.get_key_state = False 
