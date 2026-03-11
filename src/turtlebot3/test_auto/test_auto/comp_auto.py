@@ -163,7 +163,7 @@ class Turtlebot3RelativeMove(Node):
 
             self.goal_pose_x = input_x - self.start_pose_x
             self.goal_pose_y = input_y - self.start_pose_y
-            self.goal_pose_theta = input_theta - self.start_pose_theta '''
+            self.goal_pose_theta = input_theta - self.start_pose_theta
 
             #self.goal_pose_x, self.goal_pose_y, self.goal_pose_theta = self.worldtostart(input_x, input_y, input_theta)
 
