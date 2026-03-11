@@ -55,11 +55,7 @@ TRAJECTORY_BUILDER_2D.motion_filter.max_angle_radians = math.rad(0.1)
 
 TRAJECTORY_BUILDER_2D.real_time_correlative_scan_matcher = {
   linear_search_window = 0.1,
-<<<<<<< Updated upstream
-  angular_search_window = math.rad(1.)
-=======
   
->>>>>>> Stashed changes
 }
 
 
