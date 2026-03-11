@@ -1,7 +1,9 @@
 import rclpy
+import numpy
 from rclpy.node import Node
 from rclpy.qos import QoSProfile, ReliabilityPolicy
 from sensor_msgs.msg import LaserScan
+from rclpy.qos import qos_profile_sensor_data
 
 from std_msgs.msg import String
 
@@ -32,22 +34,28 @@ class ScanFilter(Node):
 
     def scan_callback(self, msg):
         filtered_msg = LaserScan()
+        self.get_logger().info('callback loop')
 
         filtered_msg.header = msg.header
         filtered_msg.angle_min = msg.angle_min
         filtered_msg.angle_max = msg.angle_max
-        filtered_msg.angle_increment = msg.time_increment
+        filtered_msg.angle_increment = msg.angle_increment
+        filtered_msg.time_increment = msg.time_increment
         filtered_msg.scan_time = msg.scan_time
         filtered_msg.range_min = msg.range_min
         filtered_msg.range_max = msg.range_max
 
-        ranges = list(filtered_msg.ranges)
-        intensities = list(msg.intensities)
+        ranges = list(msg.ranges).copy()
+        intensities = list(msg.intensities).copy()
 
         for i in range (len(ranges)):
             angle = msg.angle_min + i * msg.angle_increment
+            self.get_logger().info('range loop')
+            print("range loop")
 
-            if angle > 1.57 or angle < -1.57:
+            if angle > 3.265 or angle < 0.125:
+                self.get_logger().info('angle loop')
+                print("print angle loop")
                 ranges[i] = float('inf')
                 if i < len(intensities):
                     intensities[i] = 0.0
@@ -60,7 +68,9 @@ def main(args=None):
     rclpy.init(args=args)
 
     scan_filter = ScanFilter()
-
+    
+    scan_filter.get_logger().info('do spin')
+    print("print do spin")
     rclpy.spin(scan_filter)
 
     # Destroy the node explicitly

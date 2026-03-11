@@ -23,6 +23,7 @@ setup(
             'test_auto = test_auto.test_auto:main',
 	    'piPub = test_auto.piPub:main',
 	    'comp_auto = test_auto.comp_auto:main',
+        'scan_filter = test_auto.scan_filter:main',
         'map_go = mapAndGo.mapAndGo:main'
         ],
     },
