@@ -330,6 +330,7 @@ Add to `src/turtlebot3/turtlebot3_cartographer/package.xml`:
 <exec_depend>laser_filters</exec_depend>
 ```
 
+### Hannah says actually first you need to go into ~/turtlebot3_ws and do rosdep install -i --from-path src --rosdistro humble -y, then colcon build
 ### Step 5: Launch Command
 
 ```bash
