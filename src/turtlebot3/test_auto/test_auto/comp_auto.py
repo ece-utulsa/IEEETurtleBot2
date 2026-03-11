@@ -69,14 +69,9 @@ class Turtlebot3RelativeMove(Node):
         return (x, y, theta)
 
     #I am not dealing with more python nonsense, just go with it
-<<<<<<< Updated upstream
-    #states = [(intom(12), 0, 0, "x"), (intom(12), 0, degtorad(-90), "theta"), (intom(12), intom(12), degtorad(-90), "y"), (intom(12), intom(12), degtorad(-180), "theta"), (0, intom(12), degtorad(-180), "x"), (0, intom(12), degtorad(90), "theta"), (0, 0, degtorad(90), "y"), (0, 0, 0, "theta")]
-=======
-    states = [(intom(-12), 0, 0, "x"), (intom(-12), 0, degtorad(-90), "theta"), (intom(-12), intom(-12), degtorad(-90), "y"), (intom(-12), intom(-12), degtorad(-180), "theta")] #, (0, intom(-12), degtorad(-180), "x")] #, (0, intom(-12), degtorad(90), "theta"), (0, 0, degtorad(90), "y"), (0, 0, 0, "theta")]
->>>>>>> Stashed changes
     states = [(intom(-12), 0, 0, "x"), (intom(-12), 0, degtorad(-90), "theta"), (intom(-12), intom(-12), degtorad(-90), "y"), (intom(-12), intom(-12), degtorad(-180), "theta")] #, (0, intom(-12), degtorad(-180), "x")] #, (0, intom(-12), degtorad(90), "theta"), (0, 0, degtorad(90), "y"), (0, 0, 0, "theta")]
     state = 0
-    states = [(intom(12), 0, 0, "x")]
+    states = [(intom(18), 0, 0, "x")]
 
     def __init__(self):
         super().__init__('turtlebot3_relative_move')
@@ -117,6 +112,9 @@ class Turtlebot3RelativeMove(Node):
             self.start_pose_x = msg.pose.pose.position.x
             self.start_pose_y = msg.pose.pose.position.y
             self.start_pose_theta = self.euler_from_quaternion(msg.pose.pose.orientation)[2]
+            self.get_logger().info('start x' + str(self.start_pose_x))
+            self.get_logger().info('start y' + str(self.start_pose_y))
+            self.get_logger().info('start theta' + str(self.start_pose_theta))
             self.odom_reset = True
 
         #this puts our numbers back as if we started at 0,0,0
