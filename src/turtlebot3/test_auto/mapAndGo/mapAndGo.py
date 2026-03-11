@@ -5,11 +5,9 @@ import termios
 
 import signal #for sigint
 
-from launch import LaunchDescription
-from launch.actions import IncludeLaunchDescription
-from launch.launch_description_sources import PythonLaunchDescriptionSource
 from ament_index_python.packages import get_package_share_directory
-from launch import LaunchService
+
+import subprocess
 
 from nav_msgs.msg import Odometry
 import numpy
@@ -18,16 +16,6 @@ from rclpy.node import Node
 from rclpy.qos import QoSProfile
 
 
-def generate_launch_description():
-    tb3_cart_launch = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(
-            os.path.join(
-                get_package_share_directory('turtlebot3_cartographer'),
-                'launch',
-                'cartographer.launch.py'
-            )
-        )
-    )
 
 
 ros_distro = os.environ.get('ROS_DISTRO', 'humble').lower()
@@ -76,12 +64,9 @@ class Turtlebot3CreateMap(Node):
         #    qos
         #)
 
-        ld = generate_launch_description()
-        ls = LaunchService()
-        ls.include_launch_description(ld)
-        ls.run()
-
         #self.update_timer = self.create_timer(0.010, self.update_callback)
+
+        proc = subprocess.Popen(["bash", "-lc", "ros2 launch turtlebot3_cartographer cartographer.launch.py"])
 
         self.get_logger().info('TurtleBot3 create map node has been initialized.')
 
