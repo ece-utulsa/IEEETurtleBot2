@@ -153,7 +153,13 @@ class Turtlebot3RelativeMove(Node):
 
             self.goal_pose_x = self.last_pose_x + input_x_global
             self.goal_pose_y = self.last_pose_y + input_y_global
-            self.goal_pose_theta = self.last_pose_theta + input_theta
+            self.goal_pose_theta = self.last_pose_theta + input_theta'''
+            self.goal_pose_x = input_x - self.start_pose_x
+            self.goal_pose_y = input_y - self.start_pose_y
+            self.goal_pose_theta = input_theta - self.start_pose_theta #ignore roll and pitch (though the fact that it can do that is good to keep in mind)
+            self.get_logger().info('goal x' + str(self.goal_pose_x))
+            self.get_logger().info('goal y' + str(self.goal_pose_y))
+            self.get_logger().info('goal theta' + str(self.goal_pose_theta))
 
             self.goal_pose_x = input_x - self.start_pose_x
             self.goal_pose_y = input_y - self.start_pose_y
