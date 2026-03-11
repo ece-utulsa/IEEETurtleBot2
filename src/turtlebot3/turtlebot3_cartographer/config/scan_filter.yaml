@@ -1,0 +1,42 @@
+# Laser Scan Filter Configuration for Cartographer
+# Purpose: Remove rear-facing LIDAR measurements (170-190 degrees)
+#          to exclude back wall reflections from SLAM
+# Reference: ros-perception/laser_filters
+
+scan_to_scan_filter_chain:
+  ros__parameters:
+    # Filter 1: Angular bounds filter - Exclude rear 170-190 degrees
+    # This removes points where LIDAR readings would reflect off the back wall
+    filter1:
+      name: rear_angle_filter
+      type: laser_filters/LaserScanAngularBoundsFilterInPlace
+      params:
+        # Angle range to exclude (in radians)
+        # 170° = 2.9671 rad
+        # 190° = 3.3161 rad
+        lower_angle: 2.9671
+        upper_angle: 3.3161
+        # Use NaN instead of range_max+1 for better Cartographer SLAM compatibility
+        # This prevents false wall detection in rear area
+        replace_with_nan: true
+
+    # Filter 2: Range filter - Remove points outside valid range
+    # TurtleBot3 LDS sensor specifications:
+    # - Min range: ~0.10m (too close = noise)
+    # - Max range: ~3.5m (our max for reliable mapping)
+    filter2:
+      name: range_filter
+      type: laser_filters/LaserScanRangeFilter
+      params:
+        lower_threshold: 0.10    # 10cm minimum
+        upper_threshold: 3.5     # 3.5m maximum
+
+    # Filter 3: Speckle filter - Remove isolated noise points
+    # Uses median filtering in a sliding window
+    filter3:
+      name: speckle_filter
+      type: laser_filters/LaserScanSpeckleFilter
+      params:
+        filter_type: "median"    # Use median filtering
+        max_distance: 0.05       # Points >5cm from median are removed
+        window_size: 5           # Window size for median (must be odd)
