@@ -1,64 +1,119 @@
-#include <Arduino.h>
-#include <Servo.h>
+// =============================
+// Actuator motor control pins
+// =============================
 
-// Stepper Motor
-#define ENA_1 2
-#define STEP_1 4
-#define DIR_1 3
+// Actuator 1 pins
+#define A1_IN1 7
+#define A1_IN2 8
 
-// Servos
-Servo leftServo;
-Servo rightServo;
-int leftPos = 0;
-int rightPos = 0;
+// Actuator 2 pins
+#define A2_IN1 9
+#define A2_IN2 10
+
+// =============================
+// Limit switch pins
+// =============================
+// Using INPUT_PULLUP:
+// NOT pressed = HIGH
+// Pressed     = LOW
+
+#define A1_UP_LIMIT 2
+#define A1_DOWN_LIMIT 3
+#define A2_UP_LIMIT 4
+#define A2_DOWN_LIMIT 5
+
+// Direction tracking
+int currentDirection = -1;
+//  1 = up
+//  0 = down
+// -1 = stopped
 
 void setup() {
-  pinMode(ENA_1, OUTPUT);
-  pinMode(STEP_1, OUTPUT);
-  pinMode(DIR_1, OUTPUT);
+  pinMode(A1_IN1, OUTPUT);
+  pinMode(A1_IN2, OUTPUT);
+  pinMode(A2_IN1, OUTPUT);
+  pinMode(A2_IN2, OUTPUT);
 
-  digitalWrite(ENA_1, LOW);
-  leftServo.attach(8);
-  rightServo.attach(9);
+  pinMode(A1_UP_LIMIT, INPUT_PULLUP);
+  pinMode(A1_DOWN_LIMIT, INPUT_PULLUP);
+  pinMode(A2_UP_LIMIT, INPUT_PULLUP);
+  pinMode(A2_DOWN_LIMIT, INPUT_PULLUP);
+
+  stopActuators();
+
+  Serial.begin(9600);
+  Serial.println("Type 1 = UP, 0 = DOWN, s = STOP");
 }
 
 void loop() {
-  motorstep(200, 1);  // Up
-  turnServos(0);
-  motorstep(200, 0);  //Down
-  turnServos(1);
-}
+  checkLimitsWhileRunning();
 
-void motorstep(int numSteps, int direction) {
-  if (direction == 0) {
-    digitalWrite(DIR_1, LOW);
-  } else {
-    digitalWrite(DIR_1, HIGH);
-  }
-  for (int x = 0; x < numSteps; x++) {
-    digitalWrite(STEP_1, HIGH);
-    delay(1);  // by changing this time delay between the steps we can change the rotation speed
-    digitalWrite(STEP_1, LOW);
-    delay(1);
+  if (Serial.available() > 0) {
+    char cmd = Serial.read();
+
+    if (cmd == '1') {
+      moveActuators(1);
+    } else if (cmd == '0') {
+      moveActuators(0);
+    } else if (cmd == 's' || cmd == 'S') {
+      stopActuators();
+      Serial.println("Manual STOP");
+    }
   }
 }
 
-void turnServos(int direction) {
-  if (direction == 0) {
-    rightPos = 180;
-    for (leftPos = 0; leftPos < 180; leftPos++) {
-      leftServo.write(leftPos);
-      rightServo.write(rightPos);
-      rightPos--;
-      delay(15);
+void moveActuators(int direction) {
+  if (direction == 1) {
+    if (digitalRead(A1_UP_LIMIT) == LOW || digitalRead(A2_UP_LIMIT) == LOW) {
+      stopActuators();
+      Serial.println("Upper limit reached - cannot move UP");
+      return;
     }
-  } else {
-    leftPos = 180;
-    for (rightPos = 0; rightPos < 180; rightPos++) {
-      leftServo.write(leftPos);
-      rightServo.write(rightPos);
-      leftPos--;
-      delay(15);
+
+    digitalWrite(A1_IN1, HIGH);
+    digitalWrite(A1_IN2, LOW);
+
+    digitalWrite(A2_IN1, HIGH);
+    digitalWrite(A2_IN2, LOW);
+
+    currentDirection = 1;
+    Serial.println("Moving UP");
+  } else if (direction == 0) {
+    if (digitalRead(A1_DOWN_LIMIT) == LOW || digitalRead(A2_DOWN_LIMIT) == LOW) {
+      stopActuators();
+      Serial.println("Lower limit reached - cannot move DOWN");
+      return;
     }
+
+    digitalWrite(A1_IN1, LOW);
+    digitalWrite(A1_IN2, HIGH);
+
+    digitalWrite(A2_IN1, LOW);
+    digitalWrite(A2_IN2, HIGH);
+
+    currentDirection = 0;
+    Serial.println("Moving DOWN");
   }
+}
+
+void checkLimitsWhileRunning() {
+  if (currentDirection == 1 && (digitalRead(A1_UP_LIMIT) == LOW || digitalRead(A2_UP_LIMIT) == LOW)) {
+    stopActuators();
+    Serial.println("Stopped: upper limit switch triggered");
+  }
+
+  if (currentDirection == 0 && (digitalRead(A1_DOWN_LIMIT) == LOW || digitalRead(A2_DOWN_LIMIT) == LOW)) {
+    stopActuators();
+    Serial.println("Stopped: lower limit switch triggered");
+  }
+}
+
+void stopActuators() {
+  digitalWrite(A1_IN1, LOW);
+  digitalWrite(A1_IN2, LOW);
+
+  digitalWrite(A2_IN1, LOW);
+  digitalWrite(A2_IN2, LOW);
+
+  currentDirection = -1;
 }

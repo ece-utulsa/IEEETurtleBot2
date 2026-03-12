@@ -29,6 +29,13 @@ int frontReading;
 int backReading;
 bool start = false;
 
+// Linear Actuator
+#define A1_IN1 6
+#define A1_IN2 8
+#define A2_IN1 9
+#define A2_IN2 10
+
+
 void setup() {
   Serial.begin(115200);  // USB serial to Pi
 
