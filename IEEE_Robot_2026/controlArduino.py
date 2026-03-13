@@ -2,7 +2,7 @@ import serial
 import time
 
 # --- Setup serial port ---
-arduino_port = "/dev/ttyACM1"
+arduino_port = "/dev/ttyACM2"
 baud_rate = 115200
 ser = serial.Serial(arduino_port, baud_rate, timeout=1)
 
