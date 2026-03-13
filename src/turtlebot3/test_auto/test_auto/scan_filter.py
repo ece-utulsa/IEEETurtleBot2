@@ -34,7 +34,6 @@ class ScanFilter(Node):
 
     def scan_callback(self, msg):
         filtered_msg = LaserScan()
-        self.get_logger().info('callback loop')
 
         filtered_msg.header = msg.header
         filtered_msg.angle_min = msg.angle_min
@@ -50,12 +49,8 @@ class ScanFilter(Node):
 
         for i in range (len(ranges)):
             angle = msg.angle_min + i * msg.angle_increment
-            self.get_logger().info('range loop')
-            print("range loop")
 
             if angle > 3.265 or angle < 0.125:
-                self.get_logger().info('angle loop')
-                print("print angle loop")
                 ranges[i] = float('inf')
                 if i < len(intensities):
                     intensities[i] = 0.0
