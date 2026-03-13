@@ -18,8 +18,8 @@ unsigned long lastDebounceTime = 0;
 
 // Servos
 Adafruit_PWMServoDriver servos = Adafruit_PWMServoDriver();
-#define SERVOMIN 100  // about 0 degrees
-#define SERVOMAX 500  // about 180 degrees
+#define SERVOMIN 85  // about 0 degrees
+#define SERVOMAX 525  // about 180 degrees
 #define SERVO_FREQ 50
 
 // Start Light Sensor
@@ -63,8 +63,8 @@ void setup() {
   // Setup Servos
   servos.begin();
   servos.setPWMFreq(SERVO_FREQ);
-  servos.setPWM(0, 0, SERVOMAX);
-  servos.setPWM(1, 0, SERVOMIN);
+  servos.setPWM(0, 0, SERVOMIN);
+  servos.setPWM(1, 0, SERVOMAX);
 }
 
 void loop() {
@@ -96,7 +96,7 @@ void loop() {
           Serial.write(0xAA);
           break;
         case 0x04:  // Relay
-          setRelay(data1);
+          tiltRobot(data1);
           Serial.write(0xAA);
           break;
         default:
@@ -154,7 +154,7 @@ void tiltRobot(int setting) {
   } else if (setting == 0x01) {
     digitalWrite(RELAY_PIN_L, HIGH);  // EXTRACT or RETRACT (not sure yet lol)
     digitalWrite(RELAY_PIN_R, LOW);
-  } else if (Setting == 0x02) {
+  } else if (setting == 0x02) {
     digitalWrite(RELAY_PIN_L, LOW);  // EXTRACT or RETRACT (not sure yet lol)
     digitalWrite(RELAY_PIN_R, HIGH);
 
