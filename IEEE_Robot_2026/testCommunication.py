@@ -13,6 +13,8 @@ spi.open(spi_bus,spi_device)
 
 #Transmitting speed is 1Mbps
 spi.max_speed_hz=10000
+spi.mode = 0
+spi.bits_per_word = 8
 
 #Sending Sequence
 while True:
