@@ -1,6 +1,7 @@
 #include <Wire.h>
 #include <Arduino.h>
 #include <Adafruit_PWMServoDriver.h>
+#include <SPI.h>
 
 // Relay for Electromagnet
 #define RELAY_PIN_L 8
@@ -18,7 +19,7 @@ unsigned long lastDebounceTime = 0;
 
 // Servos
 Adafruit_PWMServoDriver servos = Adafruit_PWMServoDriver();
-#define SERVOMIN 85  // about 0 degrees
+#define SERVOMIN 85   // about 0 degrees
 #define SERVOMAX 525  // about 180 degrees
 #define SERVO_FREQ 50
 
@@ -36,9 +37,19 @@ bool start = false;
 #define A2_IN1 9
 #define A2_IN2 10
 
+// Data from Pi
+volatile byte command;
+volatile byte data1;
+volatile byte data2;
+int byte_count = 0;
 
 void setup() {
   Serial.begin(115200);  // USB serial to Pi
+
+  // Setup SPI in slave mode
+  SPCR |= bit(SPE);
+  pinMode(MISO, OUTPUT);
+  pinMode(MOSI, INPUT);
 
   // Setup Start LED
   pinMode(PHOTOCELL_F, INPUT);
@@ -71,39 +82,39 @@ void loop() {
   if (!start) {
     start = startLED();
   }
-  // if (!limitTrigger) {
-  //   Serial.println("frog");
-  // }
-  if (Serial.available()) {  // command byte + 2 data bytes
-    if (Serial.read() == 0xFF) {
-      while (Serial.available() < 3)
-        ;
-      uint8_t command = Serial.read();
-      uint8_t data1 = Serial.read();
-      uint8_t data2 = Serial.read();
 
-      switch (command) {
-        case 0x01:                  // Shovel Stepper
-          motorStep(data1, data2);  // 0 = down, 1 = up
-          Serial.write(0xAA);
-          break;
-        case 0x02:
-          motorFull(data1);
-          Serial.write(0xAA);
-          break;
-        case 0x03:  // Linear Actuators
-          turnServos(data1);
-          Serial.write(0xAA);
-          break;
-        case 0x04:  // Relay
-          tiltRobot(data1);
-          Serial.write(0xAA);
-          break;
-        default:
-          Serial.write(0xFF);  // ERROR: unknown command
-          break;
-      }
+  if (SPSR & (1 << SPIF)) {
+    if (byte_count == 0) {
+      command = SPDR;
+    } else if (byte_count == 1) {
+      data1 = SPDR;
+    } else if (byte_count == 2) {
+      data2 = SPDR;
+    } else {
+      byte_count = -1;
     }
+    byte_count++;
+  }
+  switch (command) {
+    case 0x01:                  // Shovel Stepper
+      motorStep(data1, data2);  // 0 = down, 1 = up
+      Serial.write(0xAA);
+      break;
+    case 0x02:
+      motorFull(data1);
+      Serial.write(0xAA);
+      break;
+    case 0x03:  // Linear Actuators
+      turnServos(data1);
+      Serial.write(0xAA);
+      break;
+    case 0x04:  // Relay
+      tiltRobot(data1);
+      Serial.write(0xAA);
+      break;
+    default:
+      Serial.write(0xFF);  // ERROR: unknown command
+      break;
   }
 }
 
@@ -157,7 +168,6 @@ void tiltRobot(int setting) {
   } else if (setting == 0x02) {
     digitalWrite(RELAY_PIN_L, LOW);  // EXTRACT or RETRACT (not sure yet lol)
     digitalWrite(RELAY_PIN_R, HIGH);
-
   }
 }
 
