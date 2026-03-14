@@ -7,8 +7,13 @@ turtlebot3_node:
       protocol_version: 2.0
 
     wheels:
+<<<<<<< Updated upstream
       separation: 0.280
       radius: 0.033
+=======
+      separation: 0.278
+      radius: 0.0315
+>>>>>>> Stashed changes
 
     motors:
       profile_acceleration_constant: 214.577
