@@ -135,8 +135,10 @@ void TurtleBot3::add_wheels()
   this->declare_parameter<float>("wheels.separation");
   this->declare_parameter<float>("wheels.radius");
 
-  this->get_parameter_or<float>("wheels.separation", wheels_.separation, 0.160);
-  this->get_parameter_or<float>("wheels.radius", wheels_.radius, 0.033);
+  this->get_parameter_or<float>("wheels.separation", wheels_.separation, 0.278);
+  this->get_parameter_or<float>("wheels.radius", wheels_.radius, 0.0315);
+
+  RCLCPP_INFO(this->get_logger(), "desktop node cpp separation: %f", wheels_.separation);
 }
 
 void TurtleBot3::add_sensors()

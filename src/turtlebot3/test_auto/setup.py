@@ -20,20 +20,15 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'test_auto = test_auto.test_auto:main',
+        'test_auto = test_auto.test_auto:main',
 	    'piPub = test_auto.piPub:main',
 	    'comp_auto = test_auto.comp_auto:main',
-<<<<<<< Updated upstream
         'scan_filter = test_auto.scan_filter:main',
         'map_go = mapAndGo.mapAndGo:main',
         'forward_back_auto = test_auto.forward_back_auto:main',
         'everything = test_auto.everything:main',
         'goToGoal = test_auto.goToGoal:main',
         'tf_pub = test_auto.tf_pub:main'
-=======
-        'map_go = mapAndGo.mapAndGo:main',
-        'scan_filter = test_auto.scan_filter:main'
->>>>>>> Stashed changes
         ],
     },
 )

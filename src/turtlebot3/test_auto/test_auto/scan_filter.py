@@ -54,7 +54,7 @@ class ScanFilter(Node):
         for i in range (len(ranges)):
             angle = msg.angle_min + i * msg.angle_increment
 
-            if angle > 3.265 or angle < 0.125:
+            if angle < 5.0 and angle > 1.20:
                 ranges[i] = float('inf')
                 if i < len(intensities):
                     intensities[i] = 0.0
