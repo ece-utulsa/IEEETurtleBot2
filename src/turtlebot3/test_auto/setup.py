@@ -28,6 +28,7 @@ setup(
         'forward_back_auto = test_auto.forward_back_auto:main',
         'everything = test_auto.everything:main',
         'goToGoal = test_auto.goToGoal:main',
+        'nav2ext = test_auto.nav2ext:main',
         'tf_pub = test_auto.tf_pub:main'
         ],
     },

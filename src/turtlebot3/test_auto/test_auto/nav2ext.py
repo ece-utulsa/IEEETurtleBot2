@@ -10,9 +10,9 @@ from nav2_msgs.action import NavigateToPose
 
 class Nav2Ext(Node):
     def __init__(self):
-        super().__int__('nav2_ext')
+        super().__init__('nav2_ext')
 
-        self.initial-pose_pub = self.create_publisher(
+        self.initial_pose_pub = self.create_publisher(
             PoseWithCovarianceStamped,
             '/initialpose',
             10
@@ -69,7 +69,7 @@ class Nav2Ext(Node):
         goal.pose.pose.orientation.w = w
 
         self.get_logger().info('Waiting for navigate_to_pose action server...')
-        self.nav_to_pose_client.send_goal_asyn(goal)
+        self.nav_to_pose_client.send_goal_async(goal)
 
 def main(args=None):
     rclpy.init(args=args)
@@ -77,11 +77,11 @@ def main(args=None):
 
     initial_x = 0.0005
     initial_y = -0.0443
-    initial_yaw = -0.0439
+    initial_yaw = -0.088
 
     goal_x = 0.2422
     goal_y = -0.8844
-    goal_yaw = -0.4510
+    goal_yaw = -0.935
 
     node.get_logger().info('Waiting for Nav2/AMC startup...')
     time.sleep(5)
