@@ -73,11 +73,15 @@ class Turtlebot3Full(Node):
     def update_callback(self):
         if self.runStep:
             return
+
+        if self.goal_pub.get_subscription_count() <1:
+            self.get_logger().info('Waiting for nav2ext subscriber')
+            return
         
         if self.step == 0:
-            self.send_nav_goal()
+            self.send_nav_goal(-0.7621, 0.02223, -1.4748)
         elif self.step == 1:
-            self.send_nav_goal()
+            self.send_nav_goal(0.0, 0.0, 0.0)
     
     def goal_done_callback(self, msg: Bool) -> None:
         if msg.data:

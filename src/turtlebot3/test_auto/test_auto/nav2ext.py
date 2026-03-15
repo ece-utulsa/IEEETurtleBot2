@@ -51,9 +51,9 @@ class Nav2Ext(Node):
         self.nav_to_pose_client.wait_for_server()
         self.get_logger().info('Connected to navigate_to_pose action server.')
 
-        initial_x = 0.0005
-        initial_y = -0.0443
-        initial_yaw = -0.088
+        initial_x = -0.1262
+        initial_y = -0.3970
+        initial_yaw = 0.2108
 
         self.publish_initial_pose(initial_x, initial_y, initial_yaw)
         time.sleep(1)

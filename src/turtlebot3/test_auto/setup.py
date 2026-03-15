@@ -29,6 +29,7 @@ setup(
         'everything = test_auto.everything:main',
         'goToGoal = test_auto.goToGoal:main',
         'nav2ext = test_auto.nav2ext:main',
+        'full_auto = test_auto.full_auto:main',
         'tf_pub = test_auto.tf_pub:main'
         ],
     },
