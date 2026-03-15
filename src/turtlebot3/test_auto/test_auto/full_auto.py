@@ -1,0 +1,126 @@
+import math
+import os
+import sys
+import termios
+import time
+
+import signal #for sigint
+
+from nav_msgs.msg import Odometry
+import numpy
+import rclpy
+from rclpy.node import Node
+from rclpy.qos import QoSProfile
+from geometry_msgs.msg import PoseStamped
+
+from std_msgs.msg import Bool
+
+ros_distro = os.environ.get('ROS_DISTRO', 'humble').lower()
+if ros_distro == 'humble':
+    from geometry_msgs.msg import Twist as CmdVelMsg
+else:
+    from geometry_msgs.msg import TwistStamped as CmdVelMsg
+
+class SigintSkipper:
+    def __init__(self, callback):
+        self.callback = callback
+    def __enter__(self):
+        self.got = False
+        self.handler_old = signal.signal(signal.SIGINT, self.handler)
+
+    def handler(self, sig, frame):
+        self.got = (sig, frame)
+        self.callback()
+
+    def __exit__(self, type, value, traceback):
+        print('exiting sigint skipper')
+
+class Turtlebot3Full(Node):
+    def __init__(self):
+        super().__init__('turtlebot3_full')
+
+        self.step = 0
+        self.runStep = False
+
+        self.odom = Odometry()
+        self.last_pose_x = 0.0
+        self.last_pose_y = 0.0
+        self.last_pose_theta = 0.0 #i feel like we actually start at -1.7 or smth??
+        self.goal_pose_x = 0.0
+        self.goal_pose_y = 0.0
+        self.goal_pose_theta = 0.0
+
+        self.goal_pub = self.create_publisher(
+            PoseStamped,
+            '/nav2ext/goal_pose',
+            10
+        )
+
+        self.goal_done_sub = self.create_subscription(
+            Bool,
+            '/nav2ext/goal_done',
+            self.goal_done_callback,
+            10
+        )
+
+        qos = QoSProfile(depth=10)
+
+        self.update_timer = self.create_timer(0.01, self.update_callback)
+
+        self.get_logger().info('turtlebot3 full initialized')
+
+
+    def update_callback(self):
+        if self.runStep:
+            return
+        
+        if self.step == 0:
+            self.send_nav_goal()
+        elif self.step == 1:
+            self.send_nav_goal()
+    
+    def goal_done_callback(self, msg: Bool) -> None:
+        if msg.data:
+            self.get_logger().info('Navigation goal completed.')
+            self.runStep = False
+            self.step += 1
+
+    def yaw_to_quaternation(self, yaw: float) -> tuple[float, float]:
+        z = math.sin(yaw / 2.0)
+        w = math.cos(yaw / 2.0)
+        return z, w
+    
+    def send_nav_goal(self, x: float, y: float, yaw: float) -> None:
+        self.runStep = True
+        msg = PoseStamped()
+        msg.header.frame_id = 'map'
+        msg.header.stamp = self.get_clock().now().to_msg()
+
+        msg.pose.position.x = x
+        msg.pose.position.y = y
+        msg.pose.position.z = 0.0
+
+        z, w = self.yaw_to_quaternation(yaw)
+        msg.pose.orientation.x = 0.0
+        msg.pose.orientation.y = 0.0
+        msg.pose.orientation.z = z
+        msg.pose.orientation.w = w
+
+        self.goal_pub.publish(msg)
+        self.get_logger().info(
+
+            f'Published nav goal: x={x}, y={y}, yaw={yaw}'
+        )
+        
+
+
+def main(args=None):
+    rclpy.init(args=args)
+    node = Turtlebot3Full()
+
+    def finish_callback():
+        node.destroy_node()
+        rclpy.shutdown()
+
+    with SigintSkipper(finish_callback):
+        rclpy.spin(node)
