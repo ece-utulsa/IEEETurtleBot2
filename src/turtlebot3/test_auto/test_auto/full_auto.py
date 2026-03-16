@@ -55,6 +55,8 @@ class Turtlebot3Full(Node):
         self.goal_pose_y = 0.0
         self.goal_pose_theta = 0.0
 
+        self.have_odom = False
+
         self.goal_pub = self.create_publisher(
             PoseStamped,
             '/nav2ext/goal_pose',
@@ -64,11 +66,11 @@ class Turtlebot3Full(Node):
         self.goal_done_sub = self.create_subscription(
             Bool,
             '/nav2ext/goal_done',
-            self.goal_done_callbaack,
+            self.goal_done_callback,
             10
         )
 
-        self.odom_sub = self.create-publisher(Twist, '/cmd_vel', 10)
+        self.cmd_vel_pub = self.create-publisher(Twist, '/cmd_vel', 10)
         self.odom_sub = self.create_subscription(
             Odometry,
             'odom',
@@ -153,7 +155,7 @@ class Turtlebot3Full(Node):
 
         self.stop_robot()
         self.get_logger().info('Backup complete.')
-        step = step + 1
+        self.step = self.step + 1
 
 
     def update_callback(self):
@@ -165,7 +167,7 @@ class Turtlebot3Full(Node):
             return
         
         if self.step == 0:
-            back_up_distance(0.52)
+            self.back_up_distance(0.52)
         elif self.step == 1:
             self.send_nav_goal(0.1200, -0.2700 , -2.9292)
 
