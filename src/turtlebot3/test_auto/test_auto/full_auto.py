@@ -70,7 +70,7 @@ class Turtlebot3Full(Node):
             10
         )
 
-        self.cmd_vel_pub = self.create-publisher(Twist, '/cmd_vel', 10)
+        self.cmd_vel_pub = self.create_publisher(Twist, '/cmd_vel', 10)
         self.odom_sub = self.create_subscription(
             Odometry,
             'odom',
@@ -195,7 +195,7 @@ class Turtlebot3Full(Node):
 
         z, w = self.yaw_to_quaternation(yaw)
         msg.pose.orientation.x = 0.0
-        msg.pose.orientation.y = 0.0
+        msg.pose.orientation.y =0.0
         msg.pose.orientation.z = z
         msg.pose.orientation.w = w
 
