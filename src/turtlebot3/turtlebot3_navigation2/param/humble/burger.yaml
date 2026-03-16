@@ -39,6 +39,20 @@ amcl:
     z_short: 0.05
     scan_topic: scan
 
+lifecycle_manager_navigation:
+  ros__parameters:
+    use_sim_time: False
+    autostart: True
+    node_names:
+      - controller_server
+      - planner_server
+      - recoveries_server
+      - bt_navigator
+      - waypoint_follower
+      - map_server
+      - amcl
+
+
 amcl_map_client:
   ros__parameters:
     use_sim_time: False
@@ -232,7 +246,7 @@ global_costmap:
       publish_frequency: 1.0
       global_frame: map
       robot_base_frame: base_link
-      use_sim_time: True
+      use_sim_time: False # was true
       robot_radius: 0.1
       resolution: 0.05
       track_unknown_space: true
@@ -289,7 +303,7 @@ global_costmap:
 map_server:
   ros__parameters:
     use_sim_time: False
-    yaml_filename: "map.yaml"
+    yaml_filename: "/home/robotics/desktop_ws/IEEETurtleBot2/src/turtlebot3/newest_map.yaml"
 
 map_saver:
   ros__parameters:
@@ -329,7 +343,7 @@ recoveries_server:
     global_frame: odom
     robot_base_frame: base_link
     transform_timeout: 0.1
-    use_sim_time: true
+    use_sim_time: False # was true, lower case, idk why
     simulate_ahead_time: 2.0
     max_rotational_vel: 1.0
     min_rotational_vel: 0.4

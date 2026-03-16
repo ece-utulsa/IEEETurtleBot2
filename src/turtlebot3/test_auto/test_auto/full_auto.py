@@ -80,6 +80,8 @@ class Turtlebot3Full(Node):
 
         qos = QoSProfile(depth=10)
 
+        self.processes = []
+
         self.update_timer = self.create_timer(0.01, self.update_callback)
 
         self.get_logger().info('turtlebot3 full initialized')
@@ -88,28 +90,32 @@ class Turtlebot3Full(Node):
             ["ros2", "launch", "turtlebot3_bringup", "robot.launch.py"],
             cwd="/home/robotics/pi_ws",
         )
+        self.processes.append(p1)
         
         time.sleep(1)
         
 
         p2 = subprocess.Popen(
             ["ros2", "run", "test_auto", "scan_filter"],
-            cwd="/home/robotics/desktop_ws/IEEETurtleBot2",
+            cwd="/home/robotics/desktop_ws/",
         )
+        self.processes.append(p2)
 
         time.sleep(1)
 
         p3 = subprocess.Popen(
             ["ros2", "launch", "turtlebot3_navigation2", "navigation2.launch.py", "map:=/home/robotics/desktop_ws/IEEETurtleBot2/src/turtlebot3/newest_map.yaml"],
-            cwd="/home/robotics/desktop_ws/IEEETurtleBot2",
+            cwd="/home/robotics/desktop_ws/",
         )
+        self.processes.append(p3)
 
         time.sleep(1)
 
         p4 = subprocess.Popen(
             ["ros2", "run", "test_auto", "nav2ext"],
-            cwd="/home/robotics/desktop_ws/IEEETurtleBot2",
+            cwd="/home/robotics/desktop_ws/",
         )
+        self.processes.append(p4)
 
         time.sleep(1)
 
@@ -167,8 +173,10 @@ class Turtlebot3Full(Node):
             return
         
         if self.step == 0:
-            self.back_up_distance(0.52)
+            self.send_nav_goal(-0.1780, -0.2850, 0.2108)
         elif self.step == 1:
+            self.back_up_distance(0.1)
+        elif self.step == 2:
             self.send_nav_goal(0.1200, -0.2700 , -2.9292)
 
 
@@ -204,6 +212,17 @@ class Turtlebot3Full(Node):
 
             f'Published nav goal: x={x}, y={y}, yaw={yaw}'
         )
+
+    def cleanup_processes(self):
+        for p in self.processes:
+            if p.poll() is None:
+                p.terminate()
+
+        for p in self.processes:
+            try:
+                p.wait(timeout=3)
+            except subprocess.TimeoutExpired:
+                p.kill()
         
 
 
@@ -212,6 +231,7 @@ def main(args=None):
     node = Turtlebot3Full()
 
     def finish_callback():
+        node.cleanup_processes()
         node.destroy_node()
         rclpy.shutdown()
 
