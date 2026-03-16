@@ -8,17 +8,18 @@ spi.mode = 0                # usually MODE 0 for Arduino slave (CPOL=0, CPHA=0)
 
 while True:
     # Example: send 3 bytes (you can make this any length)
-    to_send = [0xAA,0x02,0x01]          # ENSURE values are 0-255 or it will not work or could give unexpected results 
+    arms_out =  [0xAA,0x02,0x01]          # ENSURE values are 0-255 or it will not work or could give unexpected results 
     #because there is a chnce it has a mess up I would make the first byte some kind of flag like 0xAA (dont use FF because FF is what it sees if there is comms loss, because the pins are pulled high)  in fact if you see 0xFF that may be a bad sign
-
+    arms_in = [0xAA, 0x02, 0x00]
+    shovel_up = [0xAA, 0x01, 0x01]
+    shovel_down = [0xAA, 0x01, 0x00]
 
     # Full-duplex transfer: send list → receive same number of bytes back
     # you could do error checking with response or just ignore it.  I was getting weird data so write bytes is one way to the arduino
     #response = spi.xfer2(to_send)
 
-    spi.writebytes(to_send)
+    spi.writebytes(arms_in)
     
-
     print(f"Sent:     {to_send}")
     #print(f"Received: {response}")
     
