@@ -13,6 +13,8 @@ from rclpy.node import Node
 from rclpy.qos import QoSProfile
 from geometry_msgs.msg import PoseStamped
 
+import subprocess
+
 from std_msgs.msg import Bool
 
 ros_distro = os.environ.get('ROS_DISTRO', 'humble').lower()
@@ -68,6 +70,27 @@ class Turtlebot3Full(Node):
         self.update_timer = self.create_timer(0.01, self.update_callback)
 
         self.get_logger().info('turtlebot3 full initialized')
+
+        p1 = subprocess.Popen(
+            ["ros2", "launch", "turtlebot3_bringup", "robot.launch.py"],
+            cwd="/home/robotics/pi_ws",
+        )
+
+        p2 = subprocess.Popen(
+            ["ros2", "run", "test_auto", "scan_filter"],
+            cwd="/home/robotics/desktop_ws/IEEETurtleBot2",
+        )
+
+        p3 = subprocess.Popen(
+            ["ros2", "launch", "turtlebot3_navigation2", "navigation2.launch.py", "map:=/home/robotics/desktop_ws/IEEETurtleBot2/src/turtlebot3/newest_map.yaml"],
+            cwd="/home/robotics/desktop_ws/IEEETurtleBot2",
+        )
+
+        p4 = subprocess.Popen(
+            ["ros2", "run", "test_auto", "nav2ext"],
+            cwd="/home/robotics/desktop_ws/IEEETurtleBot2",
+        )
+
 
 
     def update_callback(self):
