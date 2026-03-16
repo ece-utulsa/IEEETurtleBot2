@@ -165,10 +165,8 @@ class Turtlebot3Full(Node):
             return
         
         if self.step == 0:
-            self.send_nav_goal(-0.1262, -0.3970, 0.2108)
-        elif self.step == 1:
             back_up_distance(0.52)
-        elif self.step == 2:
+        elif self.step == 1:
             self.send_nav_goal(0.1200, -0.2700 , -2.9292)
 
 
