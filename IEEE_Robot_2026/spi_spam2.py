@@ -18,9 +18,13 @@ while True:
     # you could do error checking with response or just ignore it.  I was getting weird data so write bytes is one way to the arduino
     #response = spi.xfer2(to_send)
 
-    spi.writebytes(arms_in)
+    spi.writebytes(arms_out)
     
-    print(f"Sent:     {to_send}")
+    print(f"Sent:     {arms_out}")
     #print(f"Received: {response}")
     
-    time.sleep(1)
+    time.sleep(2)
+
+    spi.writebytes(arms_in)
+    print(f"Sent:    {arms_in}")
+    time.sleep(2)

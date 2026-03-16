@@ -13,6 +13,9 @@ from rclpy.node import Node
 from rclpy.qos import QoSProfile
 from geometry_msgs.msg import PoseStamped
 
+from geometry_msgs.msg import Twist
+from nav_msgs.msg import Odometry
+
 import subprocess
 
 from std_msgs.msg import Bool
@@ -61,7 +64,15 @@ class Turtlebot3Full(Node):
         self.goal_done_sub = self.create_subscription(
             Bool,
             '/nav2ext/goal_done',
-            self.goal_done_callback,
+            self.goal_done_callbaack,
+            10
+        )
+
+        self.odom_sub = self.create-publisher(Twist, '/cmd_vel', 10)
+        self.odom_sub = self.create_subscription(
+            Odometry,
+            'odom',
+            self.odom_callback,
             10
         )
 
@@ -100,6 +111,51 @@ class Turtlebot3Full(Node):
 
         time.sleep(1)
 
+    def odom_callback(self, msg: Odometry) -> None:
+        self.last_pose_x = msg.pose.pose.position.x
+        self.last_pose_y = msg.pose.pose.position.y
+
+        qz = msg.pose.pose.orientation.z
+        qw = msg.pose.pose.orientation.w
+        self.last_pose_theta = 2.0 * math.atan2(qz, qw)
+
+        self.have_odom = True
+
+    def stop_robot(self) -> None:
+        self.cmd_vel_pub.publish(Twist())
+
+    def back_up_distance(self, distance_m: float, speed_mps: float = 0.08):
+        if not self.have_odom:
+            self.get_logger().warn('No odom yet, cannot back up.')
+            return
+
+        start_x = self.last_pose_x
+        start_y = self.last_pose_y
+
+        twist = Twist()
+        twist.linear.x = -abs(speed_mps)
+        twist.angular.z = 0.0
+
+        self.get_logger().info(
+            f'Starting backup: distance={distance_m:.3f} m, speed={speed_mps:.3f} m/s'
+        )
+
+        while rclpy.ok():
+            dx = self.last_pose_x - start_x
+            dy = self.last_pose_y - start_y
+            traveled = math.sqrt(dx * dx + dy * dy)
+
+            if traveled >= distance_m:
+                break
+            
+            self.cmd_vel_pub.publish(twist)
+            time.sleep(0.05)
+
+        self.stop_robot()
+        self.get_logger().info('Backup complete.')
+        step = step + 1
+
+
     def update_callback(self):
         if self.runStep:
             return
@@ -111,10 +167,11 @@ class Turtlebot3Full(Node):
         if self.step == 0:
             self.send_nav_goal(-0.1262, -0.3970, 0.2108)
         elif self.step == 1:
-            self.send_nav_goal(-0.7510, -0.5800, 0.2108)
+            back_up_distance(0.52)
         elif self.step == 2:
             self.send_nav_goal(0.1200, -0.2700 , -2.9292)
-    
+
+
     def goal_done_callback(self, msg: Bool) -> None:
         if msg.data:
             self.get_logger().info('Navigation goal completed.')
