@@ -75,23 +75,30 @@ class Turtlebot3Full(Node):
             ["ros2", "launch", "turtlebot3_bringup", "robot.launch.py"],
             cwd="/home/robotics/pi_ws",
         )
+        
+        time.sleep(1)
+        
 
         p2 = subprocess.Popen(
             ["ros2", "run", "test_auto", "scan_filter"],
             cwd="/home/robotics/desktop_ws/IEEETurtleBot2",
         )
 
+        time.sleep(1)
+
         p3 = subprocess.Popen(
             ["ros2", "launch", "turtlebot3_navigation2", "navigation2.launch.py", "map:=/home/robotics/desktop_ws/IEEETurtleBot2/src/turtlebot3/newest_map.yaml"],
             cwd="/home/robotics/desktop_ws/IEEETurtleBot2",
         )
+
+        time.sleep(1)
 
         p4 = subprocess.Popen(
             ["ros2", "run", "test_auto", "nav2ext"],
             cwd="/home/robotics/desktop_ws/IEEETurtleBot2",
         )
 
-
+        time.sleep(1)
 
     def update_callback(self):
         if self.runStep:
@@ -102,9 +109,11 @@ class Turtlebot3Full(Node):
             return
         
         if self.step == 0:
-            self.send_nav_goal(-0.7621, 0.02223, -1.4748)
+            self.send_nav_goal(-0.1262, -0.3970, 0.2108)
         elif self.step == 1:
-            self.send_nav_goal(0.0, 0.0, 0.0)
+            self.send_nav_goal(-0.7510, -0.5800, 0.2108)
+        elif self.step == 2:
+            self.send_nav_goal(0.1200, -0.2700 , -2.9292)
     
     def goal_done_callback(self, msg: Bool) -> None:
         if msg.data:
