@@ -16,6 +16,8 @@ from geometry_msgs.msg import PoseStamped
 from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
 
+from control import send_spi_command
+
 import subprocess
 
 from std_msgs.msg import Bool
@@ -124,6 +126,11 @@ class Turtlebot3Full(Node):
 
         time.sleep(1)
 
+        self.arms_in = [0xAA, 0x02, 0x00]
+        self.arms_out =  [0xAA,0x02,0x01]
+        self.shovel_up = [0xAA, 0x01, 0x01]
+        self.shovel_down = [0xAA, 0x01, 0x00]
+
 
     def start_backup(self, distance_m: float, speed_mps: float = 0.08) -> None:
         if not self.have_odom:
@@ -184,11 +191,14 @@ class Turtlebot3Full(Node):
             return
         
         if self.step == 0:
-            self.send_nav_goal(-0.1780, -0.2850, 0.2108)
+            self.send_nav_goal(-0.1650, -0.2644, 0.2020)
         elif self.step == 1:
-            self.start_backup(0.2)
+            send_spi_command(self.arms_out)
+            self.step += 1
         elif self.step == 2:
-            self.send_nav_goal(0.1200, -0.2700 , -2.9292)
+            self.start_backup(0.4)
+        elif self.step == 3:
+            self.send_nav_goal(0.0806, -0.1274 , -2.5874)
 
 
     def goal_done_callback(self, msg: Bool) -> None:
