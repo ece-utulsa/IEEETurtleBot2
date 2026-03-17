@@ -73,7 +73,7 @@ class Turtlebot3Full(Node):
         self.cmd_vel_pub = self.create_publisher(Twist, '/cmd_vel', 10)
         self.odom_sub = self.create_subscription(
             Odometry,
-            'odom',
+            '/odom',
             self.odom_callback,
             10
         )
@@ -119,6 +119,7 @@ class Turtlebot3Full(Node):
 
         time.sleep(1)
 
+
     def odom_callback(self, msg: Odometry) -> None:
         self.last_pose_x = msg.pose.pose.position.x
         self.last_pose_y = msg.pose.pose.position.y
@@ -149,10 +150,19 @@ class Turtlebot3Full(Node):
         )
 
         while rclpy.ok():
+            rclpy.spin_once(self, timeout_sec=0.0)
+
             dx = self.last_pose_x - start_x
             dy = self.last_pose_y - start_y
-            traveled = math.sqrt(dx * dx + dy * dy)
+            
+            self.get_logger().info(
+                f'last x is {self.last_pose_x}, last y is {self.last_pose_y}, dx is {dx}, dy is {dy}'
+            )
 
+            traveled = math.sqrt(dx * dx + dy * dy)
+            self.get_logger().info(
+                f'I have moved {traveled}'
+            )
             if traveled >= distance_m:
                 break
             
