@@ -56,6 +56,11 @@ class Turtlebot3Full(Node):
         self.goal_pose_theta = 0.0
 
         self.have_odom = False
+        self.backing_up = False
+        self.backup_start_x = 0.0
+        self.backup_start_y = 0.0
+        self.backup_target = 0.0
+        self.backup_speed = 0.08
 
         self.goal_pub = self.create_publisher(
             PoseStamped,
@@ -120,6 +125,41 @@ class Turtlebot3Full(Node):
         time.sleep(1)
 
 
+    def start_backup(self, distance_m: float, speed_mps: float = 0.08) -> None:
+        if not self.have_odom:
+            self.get_logger().warn('no odom yet, cannot start backup')
+            return
+
+        self.backup_start_x = self.last_pose_x
+        self.backup_start_y = self.last_pose_y
+        self.backup_target = distance_m
+        self.backup_speed = abs(speed_mps)
+        self.backing_up = True
+
+        self.get_logger().info(f'Starting backup for {distance_m} m')
+
+    def update_backup(self) -> None:
+        dx = self.last_pose_x - self.backup_start_x
+        dy = self.last_pose_y - self.backup_start_y
+        traveled = math.sqrt(dx * dx + dy * dy)
+
+        self.get_logger().info(f'Backed up {traveled:.3f} m')
+
+        if traveled >= self.backup_target:
+            self.stop_robot()
+            self.get_logger().info('Backup complete.')
+            self.backing_up = False
+            self.step += 1
+            return
+
+        twist = Twist()
+        twist.linear.x = -self.backup_speed
+        twist.angular.z = 0.0
+        self.cmd_vel_pub.publish(twist)
+
+    def stop_robot(self) -> None:
+        self.cmd_vel_pub.publish(Twist())
+
     def odom_callback(self, msg: Odometry) -> None:
         self.last_pose_x = msg.pose.pose.position.x
         self.last_pose_y = msg.pose.pose.position.y
@@ -130,49 +170,6 @@ class Turtlebot3Full(Node):
 
         self.have_odom = True
 
-    def stop_robot(self) -> None:
-        self.cmd_vel_pub.publish(Twist())
-
-    def back_up_distance(self, distance_m: float, speed_mps: float = 0.08):
-        if not self.have_odom:
-            self.get_logger().warn('No odom yet, cannot back up.')
-            return
-
-        start_x = self.last_pose_x
-        start_y = self.last_pose_y
-
-        twist = Twist()
-        twist.linear.x = -abs(speed_mps)
-        twist.angular.z = 0.0
-
-        self.get_logger().info(
-            f'Starting backup: distance={distance_m:.3f} m, speed={speed_mps:.3f} m/s'
-        )
-
-        while rclpy.ok():
-            rclpy.spin_once(self, timeout_sec=0.0)
-
-            dx = self.last_pose_x - start_x
-            dy = self.last_pose_y - start_y
-            
-            self.get_logger().info(
-                f'last x is {self.last_pose_x}, last y is {self.last_pose_y}, dx is {dx}, dy is {dy}'
-            )
-
-            traveled = math.sqrt(dx * dx + dy * dy)
-            self.get_logger().info(
-                f'I have moved {traveled}'
-            )
-            if traveled >= distance_m:
-                break
-            
-            self.cmd_vel_pub.publish(twist)
-            time.sleep(0.05)
-
-        self.stop_robot()
-        self.get_logger().info('Backup complete.')
-        self.step = self.step + 1
-
 
     def update_callback(self):
         if self.runStep:
@@ -181,11 +178,15 @@ class Turtlebot3Full(Node):
         if self.goal_pub.get_subscription_count() <1:
             self.get_logger().info('Waiting for nav2ext subscriber')
             return
+
+        if self.backing_up:
+            self.update_backup()
+            return
         
         if self.step == 0:
             self.send_nav_goal(-0.1780, -0.2850, 0.2108)
         elif self.step == 1:
-            self.back_up_distance(0.1)
+            self.start_backup(0.2)
         elif self.step == 2:
             self.send_nav_goal(0.1200, -0.2700 , -2.9292)
 
