@@ -16,7 +16,7 @@ from geometry_msgs.msg import PoseStamped
 from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
 
-from control import send_spi_command
+from test_auto.control import send_spi_command
 
 import subprocess
 
@@ -191,13 +191,17 @@ class Turtlebot3Full(Node):
             return
         
         if self.step == 0:
-            self.send_nav_goal(-0.1650, -0.2644, 0.2020)
+            self.send_nav_goal(-0.1050, -0.2244, 0.2020)
         elif self.step == 1:
             send_spi_command(self.arms_out)
             self.step += 1
         elif self.step == 2:
-            self.start_backup(0.4)
+            self.start_backup(0.46)
         elif self.step == 3:
+            time.sleep(0.5)
+            send_spi_command(self.arms_in)
+            self.step += 1
+        elif self.step == 4:
             self.send_nav_goal(0.0806, -0.1274 , -2.5874)
 
 
