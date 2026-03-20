@@ -110,6 +110,8 @@ class Turtlebot3Full(Node):
 
         time.sleep(1)
 
+        self.amSleeping = False
+
         p3 = subprocess.Popen(
             ["ros2", "launch", "turtlebot3_navigation2", "navigation2.launch.py", "map:=/home/robotics/desktop_ws/IEEETurtleBot2/src/turtlebot3/newest_map.yaml"],
             cwd="/home/robotics/desktop_ws/",
@@ -201,9 +203,17 @@ class Turtlebot3Full(Node):
             time.sleep(0.5)
             send_spi_command(self.arms_in)
             self.step += 1
-        elif self.step == 4:
+        elif (self.step == 4) and not(self.amSleeping):
+            mySleep(self, 10)
+        elif self.step == 5:
+            self.amSleeping = False
             self.send_nav_goal(0.0806, -0.1274 , -2.5874)
 
+
+    def mySleep(self,s sleepTime):
+        self.amSleeping = True
+        time.sleep(sleepTime)
+        self.step++
 
     def goal_done_callback(self, msg: Bool) -> None:
         if msg.data:
