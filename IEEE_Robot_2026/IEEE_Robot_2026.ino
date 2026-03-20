@@ -1,21 +1,33 @@
 #include <Wire.h>
 #include <Arduino.h>
 #include <Adafruit_PWMServoDriver.h>
+#include <SPI.h>
 
-// Relay for Electromagnet
-#define RELAY_PIN 7
+// SPI Communication
+#define MESSAGE_LENGTH 3
+
+const byte BUF_SIZE = 16;           // max message size you expect
+volatile byte rx_buffer[BUF_SIZE];  // incoming from Pi
+volatile byte tx_buffer[BUF_SIZE];  // what we'll send back
+volatile byte command_buffer[BUF_SIZE];
+volatile byte rx_index = 0;
+volatile bool message_complete = false;
+
+// Actuators
+#define RELAY_PIN_UP 3
+#define RELAY_PIN_DOWN 4
 
 //Stepper Motors
 #define ENA_1 7
-#define DIR_1 3
-#define STEP_1 4
+#define DIR_1 8
+#define STEP_1 9
 
 #define LIMIT_SWITCH 2
 bool limitTrigger = false;
 
 // Servos
 Adafruit_PWMServoDriver servos = Adafruit_PWMServoDriver();
-#define SERVOMIN 100  // about 0 degrees
+#define SERVOMIN 110  // about 0 degrees
 #define SERVOMAX 500  // about 180 degrees
 #define SERVO_FREQ 50
 
@@ -32,7 +44,11 @@ bool start = false;
 unsigned long lastDebounceTime = 0;
 
 void setup() {
-  Serial.begin(115200);  // USB serial to Pi
+  Serial.begin(115200);
+  pinMode(MISO, OUTPUT);
+  pinMode(10, INPUT_PULLUP);  // SS
+  SPCR |= _BV(SPE);           // enable SPI slave
+  SPI.attachInterrupt();      // use interrupt
 
   // Setup Start LED
   pinMode(PHOTOCELL_F, INPUT);
@@ -40,9 +56,11 @@ void setup() {
   pinMode(LED, OUTPUT);
   digitalWrite(LED, HIGH);
 
-
-  pinMode(RELAY_PIN, OUTPUT);
-  digitalWrite(RELAY_PIN, LOW);  // relay off
+  // Setup Actuators
+  pinMode(RELAY_PIN_UP, OUTPUT);
+  digitalWrite(RELAY_PIN_UP, LOW);
+  pinMode(RELAY_PIN_DOWN, OUTPUT);
+  digitalWrite(RELAY_PIN_DOWN, LOW);  // actuators off
 
   // Setup Stepper Motor
   pinMode(ENA_1, OUTPUT);
@@ -55,44 +73,105 @@ void setup() {
   // Setup Servos
   servos.begin();
   servos.setPWMFreq(SERVO_FREQ);
-  servos.setPWM(0, 0, SERVOMAX);
-  servos.setPWM(1, 0, SERVOMIN);
+  servos.setPWM(0, 0, SERVOMIN);
+  servos.setPWM(1, 0, SERVOMAX);
+
+  // TESTING
+  turnServos(0x01);
+  motorStep(0x01);
+  delay(1000);
+  motorStep(0x00);
+  //actuators(0x01);
 }
 
 void loop() {
   if (!start) {
     start = startLED();
   }
-  if (Serial.available()) {  // command byte + 2 data bytes
-    if (Serial.read() == 0xFF) {
-      while (Serial.available() < 3)
-        ;
-      uint8_t command = Serial.read();
-      uint8_t data1 = Serial.read();
-      uint8_t data2 = Serial.read();
+  if (!limitTrigger) {
+    Serial.println("Frog");
+  }
+  load_response();
 
-      switch (command) {
-        case 0x01:                  // Shovel Stepper
-          motorStep(data1, data2);  // 0 = down, 1 = up
-          Serial.write(0xAA);
-          break;
-        case 0x02:
-          motorFull(data1);
-          Serial.write(0xAA);
-          break;
-        case 0x03:  // Servos
-          turnServos(data1);
-          Serial.write(0xAA);
-          break;
-        case 0x04:  // Relay
-          setRelay(data1);
-          Serial.write(0xAA);
-          break;
-        default:
-          Serial.write(0xFF);  // ERROR: unknown command
-          break;
-      }
+  // check if something needs to be done:
+  if (command_buffer[0] != 0xAA) {
+    return;
+  }
+
+  switch (command_buffer[1]) {
+    case 0x01:                       // Shovel Stepper
+      motorStep(command_buffer[2]);  // 0 = down, 1 = up
+      Serial.println("Motor Moved");
+      break;
+    case 0x02:                        // Servos
+      turnServos(command_buffer[2]);  // 0 = in, 1 = out
+      Serial.println("Servos Turned");
+      break;
+    case 0x03:  // Actuators
+      actuators(command_buffer[2]);
+      Serial.println("Actuators worked");
+      break;
+  }
+
+  //empty the command buffer because its done!
+  for (byte i = 0; i < BUF_SIZE; i++) {
+    command_buffer[i] = 0x00;
+  }
+}
+
+void motorStep(int direction) {
+  if (direction == 0) {  // move down
+    digitalWrite(DIR_1, LOW);
+    while (!limitTrigger) {
+      digitalWrite(STEP_1, HIGH);
+      delay(1);
+      digitalWrite(STEP_1, LOW);
+      delay(1);
     }
+  } else if (direction == 1) {  // move up
+    digitalWrite(DIR_1, HIGH);
+    for (int i = 0; i < 3300; i++) {
+      digitalWrite(STEP_1, HIGH);
+      delay(1);
+      digitalWrite(STEP_1, LOW);
+      delay(1);
+    }
+  }
+}
+
+void actuators(int setting) {
+  if (setting == 0x00) {  // DOWN
+    digitalWrite(RELAY_PIN_UP, HIGH);
+    digitalWrite(RELAY_PIN_DOWN, LOW);
+    delay(10000);
+    digitalWrite(RELAY_PIN_UP, LOW);
+    digitalWrite(RELAY_PIN_DOWN, LOW);
+  } else if (setting == 0x01) {  // UP
+    digitalWrite(RELAY_PIN_UP, LOW);
+    digitalWrite(RELAY_PIN_DOWN, HIGH);
+    delay(10000);
+    digitalWrite(RELAY_PIN_UP, LOW);
+    digitalWrite(RELAY_PIN_DOWN, LOW);
+  } else if (setting == 0x02) {  // OFF
+    digitalWrite(RELAY_PIN_UP, LOW);
+    digitalWrite(RELAY_PIN_DOWN, LOW);
+  }
+}
+
+void turnServos(int direction) {
+  if (direction == 0) {
+    servos.setPWM(0, 0, SERVOMIN);
+    servos.setPWM(1, 0, SERVOMAX);
+  } else if (direction == 1) {
+    servos.setPWM(0, 0, (SERVOMAX - 200));
+    servos.setPWM(1, 0, (SERVOMIN + 200));
+  }
+}
+
+void switchInterrupt() {
+  if (millis() - lastDebounceTime > DEBOUNCE_DELAY) {
+    limitTrigger = true;
+    lastDebounceTime = millis();
   }
 }
 
@@ -107,56 +186,48 @@ bool startLED() {
   return trigger;
 }
 
-void motorStep(int numSteps, int direction) {
-  if (direction == 0) {  // move down
-    digitalWrite(DIR_1, LOW);
-  } else if (direction == 1) {  // move up
-    digitalWrite(DIR_1, HIGH);
-  }
+ISR(SPI_STC_vect) {      // called after every byte transfer
+  byte received = SPDR;  // read what Pi just sent
 
-  for (int i = 0; i < numSteps; i++) {
-    digitalWrite(STEP_1, HIGH);
-    delay(1);
-    digitalWrite(STEP_1, LOW);
-    delay(1);
+  if (rx_index < BUF_SIZE) {
+    rx_buffer[rx_index] = received;
+    SPDR = tx_buffer[rx_index];  // load what we want to send next
+    rx_index++;
+  } else {
+    // Buffer overflow protection – ignore or handle error
+    SPDR = 0xFF;
+  }
+  // Assume Pi always sends exactly MESSAGE_LENGTH bytes
+  if (rx_index == MESSAGE_LENGTH && !message_complete) {
+    message_complete = true;
+    rx_index = 0;  // ready for next message
   }
 }
 
-void motorFull(int direction) {
-  if (direction = 0) {
-    digitalWrite(DIR_1, LOW);
-    while (digitalRead(LIMIT_SWITCH) == LOW) {
-      digitalWrite(STEP_1, HIGH);
-      delay(1);
-      digitalWrite(STEP_1, LOW);
-      delay(1);
+void load_response() {
+  if (message_complete) {
+    noInterrupts();             // briefly disable ISR to copy safely
+    byte len = MESSAGE_LENGTH;  // or whatever length you used
+    byte copy_rx[MESSAGE_LENGTH];
+    for (byte i = 0; i < len; i++) {
+      copy_rx[i] = rx_buffer[i];
+      //OR do this with the global thing I made
+      command_buffer[i] = rx_buffer[i];
     }
-  } else if (direction == 1) {
-    digitalWrite(DIR_1, HIGH);
-  }
-}
+    interrupts();
 
-void setRelay(int setting) {
-  if (setting == 0x00) {
-    digitalWrite(RELAY_PIN, LOW);  // OFF
-  } else if (setting == 0x01) {
-    digitalWrite(RELAY_PIN, HIGH);  // ON
-  }
-}
+    // All this does is print the recived bytes to serial
+    Serial.print("Pi sent: ");
+    for (byte i = 0; i < len; i++) {
+      Serial.print(copy_rx[i]);
+      Serial.print(" ");
+    }
+    Serial.println();
 
-void turnServos(int direction) {
-  if (direction == 0) {
-    servos.setPWM(0, 0, SERVOMIN);
-    servos.setPWM(1, 0, SERVOMAX);
-  } else if (direction == 1) {
-    servos.setPWM(0, 0, SERVOMAX);
-    servos.setPWM(1, 0, SERVOMIN);
-  }
-}
-
-void switchInterrupt() {
-  if (millis() - lastDebounceTime > DEBOUNCE_DELAY) {
-    limitTrigger = true;
-    lastDebounceTime = millis();
+    // Optional: update tx_buffer for next time (e.g. echo back + offset)
+    for (byte i = 0; i < len; i++) {
+      tx_buffer[i] = copy_rx[i];
+    }
+    message_complete = false;
   }
 }
