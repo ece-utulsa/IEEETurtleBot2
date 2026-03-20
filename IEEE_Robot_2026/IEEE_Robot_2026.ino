@@ -14,13 +14,13 @@ volatile byte rx_index = 0;
 volatile bool message_complete = false;
 
 // Actuators
-#define RELAY_PIN_UP 3
-#define RELAY_PIN_DOWN 4
+#define RELAY_PIN_UP 9
+#define RELAY_PIN_DOWN 8
 
 //Stepper Motors
 #define ENA_1 7
-#define DIR_1 8
-#define STEP_1 9
+#define DIR_1 3
+#define STEP_1 4
 
 #define LIMIT_SWITCH 2
 bool limitTrigger = false;
@@ -46,7 +46,6 @@ unsigned long lastDebounceTime = 0;
 void setup() {
   Serial.begin(115200);
   pinMode(MISO, OUTPUT);
-  pinMode(10, INPUT_PULLUP);  // SS
   SPCR |= _BV(SPE);           // enable SPI slave
   SPI.attachInterrupt();      // use interrupt
 
@@ -77,20 +76,21 @@ void setup() {
   servos.setPWM(1, 0, SERVOMAX);
 
   // TESTING
-  turnServos(0x01);
-  motorStep(0x01);
+  turnServos(0x00);
+  // motorStep(0x01);
   delay(1000);
-  motorStep(0x00);
-  //actuators(0x01);
+  // motorStep(0x00);
+  // actuators(0x01);
+  turnServos(0x01);
 }
 
 void loop() {
   if (!start) {
     start = startLED();
   }
-  if (!limitTrigger) {
-    Serial.println("Frog");
-  }
+  // if (!limitTrigger) {
+  //   Serial.println("Frog");
+  // }
   load_response();
 
   // check if something needs to be done:
