@@ -1,10 +1,23 @@
 import spidev
 import time
+import RPi.GPIO as GPIO
 
 spi = spidev.SpiDev()
 spi.open(0, 0)             # bus 0, device 0 (CE0)
 spi.max_speed_hz = 10000  # 1 MHz – safe start; can try 2–4 MHz later
 spi.mode = 0                # usually MODE 0 for Arduino slave (CPOL=0, CPHA=0)
+
+GPIO.setmode(GPIO.BCM)
+LED_PIN = 17
+
+GPIO.setup(LED_PIN, GPIO.IN)
+start = False
+
+def start_now(channel):
+    global start
+    start = bool(GPIO.input(channel))
+
+GPIO.add_event_detect(LED_PIN, GPIO.RISING, callback=start_now, bouncetime=50)
  
 while True:
     # ENSURE values are 0-255 or it will not work / give unexpected results 

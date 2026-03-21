@@ -34,7 +34,7 @@ Adafruit_PWMServoDriver servos = Adafruit_PWMServoDriver();
 // Start Light Sensor
 #define PHOTOCELL_F A0
 #define PHOTOCELL_B A1
-#define LED 12
+#define TELL_PI 12
 int frontReading;
 int backReading;
 bool start = false;
@@ -54,8 +54,8 @@ void setup() {
   // Setup Start LED
   pinMode(PHOTOCELL_F, INPUT);
   pinMode(PHOTOCELL_B, INPUT);
-  pinMode(LED, OUTPUT);
-  digitalWrite(LED, HIGH);
+  pinMode(TELL_PI, OUTPUT);
+  digitalWrite(TELL_PI, LOW);
 
   // Setup Actuators
   pinMode(RELAY_PIN_UP, OUTPUT);
@@ -184,7 +184,7 @@ bool startLED() {
   backReading = analogRead(PHOTOCELL_B);
   if (backReading - frontReading >= 200) {
     trigger = true;
-    digitalWrite(LED, LOW);
+    digitalWrite(TELL_PI, HIGH);
   }
   return trigger;
 }
