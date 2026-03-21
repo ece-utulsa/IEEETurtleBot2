@@ -45,10 +45,12 @@ unsigned long lastDebounceTime = 0;
 
 void setup() {
   Serial.begin(115200);
+  Serial.println("starting");
   pinMode(MISO, OUTPUT);
-  SPCR |= _BV(SPE);           // enable SPI slave
-  SPI.attachInterrupt();      // use interrupt
+  SPCR |= _BV(SPE);       // enable SPI slave
+  SPI.attachInterrupt();  // use interrupt
 
+  pinMode(13, INPUT_PULLUP);
   // Setup Start LED
   pinMode(PHOTOCELL_F, INPUT);
   pinMode(PHOTOCELL_B, INPUT);
@@ -76,12 +78,13 @@ void setup() {
   servos.setPWM(1, 0, SERVOMAX);
 
   // TESTING
-  turnServos(0x00);
-  // motorStep(0x01);
+  //turnServos(0x00);
+  //motorStep(0x01);
+  //actuators(0x00);
   delay(1000);
-  // motorStep(0x00);
-  // actuators(0x01);
-  turnServos(0x01);
+  //motorStep(0x00);
+  actuators(0x00);
+  //turnServos(0x01);
 }
 
 void loop() {
