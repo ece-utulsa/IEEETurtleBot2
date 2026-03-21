@@ -126,6 +126,22 @@ bool DynamixelSDKWrapper::read_register(
 
   int32_t dxl_comm_result = COMM_RX_FAIL;
   uint8_t dxl_error = 0;
+  
+  if (data_basket == nullptr) {
+    if (log != nullptr) {
+	    *log = "data_basket is null";
+       }
+       return false;
+  }
+
+  if (length == 0) {
+    if (log != nullptr) {
+	    *log = "length is 0";
+    }
+    return false;
+  }
+
+  memset(data_basket, 0, length);
 
   dxl_comm_result = packetHandler_->readTxRx(
     portHandler_,
@@ -136,16 +152,19 @@ bool DynamixelSDKWrapper::read_register(
     &dxl_error);
 
   if (dxl_comm_result != COMM_SUCCESS) {
-    if (log != NULL) {*log = packetHandler_->getTxRxResult(dxl_comm_result);}
+    if (log != nullptr) {*log = packetHandler_->getTxRxResult(dxl_comm_result);}
+    memset(data_basket, 0, length);
     return false;
-  } else if (dxl_error != 0) {
-    if (log != NULL) {*log = packetHandler_->getRxPacketError(dxl_error);}
-    return false;
-  } else {
-    return true;
   }
+  if (dxl_error != 0) {
+    if (log != nullptr) {
+	    *log = packetHandler_->getRxPacketError(dxl_error);
+    }
 
-  return false;
+    memset(data_basket, 0, length);
+    return false;
+  }
+  return true;
 }
 
 bool DynamixelSDKWrapper::write_register(

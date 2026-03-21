@@ -46,7 +46,7 @@ class Turtlebot3Full(Node):
     def __init__(self):
         super().__init__('turtlebot3_full')
 
-        self.step = 0
+        self.step = -4
         self.runStep = False
 
         self.odom = Odometry()
@@ -99,7 +99,7 @@ class Turtlebot3Full(Node):
         )
         self.processes.append(p1)
         
-        time.sleep(1)
+        self.mySleep(10)
         
 
         p2 = subprocess.Popen(
@@ -108,9 +108,11 @@ class Turtlebot3Full(Node):
         )
         self.processes.append(p2)
 
-        time.sleep(1)
+        self.mySleep(6)
 
         self.amSleeping = False
+
+        self.didSleep = False
 
         p3 = subprocess.Popen(
             ["ros2", "launch", "turtlebot3_navigation2", "navigation2.launch.py", "map:=/home/robotics/desktop_ws/IEEETurtleBot2/src/turtlebot3/newest_map.yaml"],
@@ -118,7 +120,7 @@ class Turtlebot3Full(Node):
         )
         self.processes.append(p3)
 
-        time.sleep(1)
+        self.mySleep(15)
 
         p4 = subprocess.Popen(
             ["ros2", "run", "test_auto", "nav2ext"],
@@ -126,12 +128,16 @@ class Turtlebot3Full(Node):
         )
         self.processes.append(p4)
 
-        time.sleep(1)
+        self.mySleep(6)
 
         self.arms_in = [0xAA, 0x02, 0x00]
         self.arms_out =  [0xAA,0x02,0x01]
         self.shovel_up = [0xAA, 0x01, 0x01]
         self.shovel_down = [0xAA, 0x01, 0x00]
+        self.actuators_up = [0xAA, 0x03, 0x00]
+        self.actuators_down = [0xAA, 0x03, 0x01]
+
+        self.amSleeping = False
 
 
     def start_backup(self, distance_m: float, speed_mps: float = 0.08) -> None:
@@ -193,27 +199,67 @@ class Turtlebot3Full(Node):
             return
         
         if self.step == 0:
-            self.send_nav_goal(-0.1050, -0.2244, 0.2020)
+            send_spi_command(self.shovel_down)
+            self.get_logger().info('step 0')
+            if not(self.amSleeping):
+                self.get_logger().info('init sleep')
+                self.mySleep(1)
         elif self.step == 1:
+            self.get_logger().info('step 1')
+            self.amSleeping = False
+            self.send_nav_goal(-0.1050, -0.2244, 0.2020)
+        elif self.step == 2:
             send_spi_command(self.arms_out)
             self.step += 1
-        elif self.step == 2:
-            self.start_backup(0.46)
+            self.amSleeping = False
         elif self.step == 3:
-            time.sleep(0.5)
+            self.start_backup(0.46)
+        elif self.step == 4:
             send_spi_command(self.arms_in)
             self.step += 1
-        elif (self.step == 4) and not(self.amSleeping):
-            mySleep(self, 10)
-        elif self.step == 5:
+        elif ((self.step == 5) and not(self.amSleeping)):
+            self.get_logger().info('I am in here')
+            self.mySleep(1)
+        elif self.step == 6:
+            self.get_logger().info('Start step 6')
             self.amSleeping = False
-            self.send_nav_goal(0.0806, -0.1274 , -2.5874)
+            self.step += 1
+            self.get_logger().info('End step 6')
+        elif self.step == 7:
+            self.get_logger().info('start 7')
+            self.send_nav_goal(-0.10, 0.0 , 2.7)
+            if not self.amSleeping:
+                self.altSleep(5)
+            if didSleep:
+                send_spi_command(self.arms_out)
+        elif self.step == 8:
+            self.get_logger().info('start 8')
+            self.amSleeping = False
+            self.didSleep = False
+            self.send_nav_goal(0.25, -0.55, 3.0)
+        elif self.step == 9:
+            send_spi_command(self.arms_in)
+        elif self.step == 10:
+            self.start_backup(0.15)
+            if not self.amSleeping:
+                self.altSleep(1)
+            if didSleep:
+                send_spi_command(self.arms_out)
 
 
-    def mySleep(self,s sleepTime):
+
+    def mySleep(self, sleepTime):
+        self.get_logger().info('start the sleep')
         self.amSleeping = True
         time.sleep(sleepTime)
-        self.step++
+        self.step += 1
+        self.get_logger().info(f'I am done sleeping. Step is {self.step}')
+
+    def altSleep(self, sleepTime):
+        self.amSleeping = True
+        time.sleep(sleepTime)
+        self.didSleep = True
+        
 
     def goal_done_callback(self, msg: Bool) -> None:
         if msg.data:
