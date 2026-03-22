@@ -316,7 +316,7 @@ class Turtlebot3Full(Node):
             if not self.amNavigating:
                 #self.controller_server.set_parameters(Parameter('general_goal_checker.xy_goal_tolerance', Parameter.Type.DOUBLE, 0.1)) #TODO maybe should store the prev ones somewhere
                 #self.controller_server.set_parameters(Parameter('general_goal_checker.yaw_goal_tolerance', Parameter.Type.DOUBLE, 0.05))
-                self.send_nav_goal(-0.1, 0.25, -3.0)
+                self.send_nav_goal(-0.1, 0.25, -3.0) 
 
     def mySleep(self, sleepTime):
         if not self.amSleeping:
