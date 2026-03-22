@@ -1,10 +1,13 @@
 import spidev
+import time
 
-for dev in [0, 1]:
-    spi = spidev.SpiDev()
-    spi.open(0, dev)
-    spi.max_speed_hz = 100000
-    spi.mode = 0
-    resp = spi.xfer2([0xAA, 0x02, 0x01])
-    print(f"CE{dev}: {resp}")
-    spi.close()
+spi = spidev.SpiDev()
+spi.open(0, 0)   # bus 0, CE0
+spi.max_speed_hz = 10000
+spi.mode = 0
+
+while True:
+    data = [0xAA, 0x01, 0x02]
+    print("Sending:", data)
+    spi.xfer2(data)  # use xfer2 for full-duplex
+    time.sleep(1)

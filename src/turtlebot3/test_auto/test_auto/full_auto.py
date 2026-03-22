@@ -133,17 +133,17 @@ class Turtlebot3Full(Node):
         self.arms_in = [0xAA, 0x02, 0x00]
         self.arms_out =  [0xAA,0x02,0x01]
 
-        self.arm_speed = 2
+        self.arm_speed = 1
 
         self.shovel_up = [0xAA, 0x01, 0x01]
         self.shovel_down = [0xAA, 0x01, 0x00]
 
-        self.shovel_speed = 5
+        self.shovel_speed = 1
 
         self.actuators_up = [0xAA, 0x03, 0x00]
         self.actuators_down = [0xAA, 0x03, 0x01]
 
-        self.actuator_speed = 5
+        self.actuator_speed = 1
         
         self.altSleep(5)
 
@@ -229,10 +229,10 @@ class Turtlebot3Full(Node):
             send_spi_command(self.shovel_down)
             self.get_logger().info('step 0')
             self.mySleep(1)
-#        elif self.step == 1:
-#            self.get_logger().info('step 1')
-#            self.amSleeping = False
-#            self.send_nav_goal(-0.1050, -0.2244, 0.2020)
+        #elif self.step == 1:
+        #    self.get_logger().info('step 1')
+        #    self.amSleeping = False
+        #    self.send_nav_goal(-0.1050, -0.2244, 0.2020)
         elif self.step == 1:
             send_spi_command(self.arms_out)
             self.amSleeping = False
@@ -303,9 +303,9 @@ class Turtlebot3Full(Node):
         elif self.step == 21:
             self.amSleeping = False
             if not self.amNavigating:
-                self.send_nav_goal(0.0, 0.25, -3.0)
-
-
+                #self.controller_server.set_parameters(Parameter('general_goal_checker.xy_goal_tolerance', Parameter.Type.DOUBLE, 0.1)) #TODO maybe should store the prev ones somewhere
+                #self.controller_server.set_parameters(Parameter('general_goal_checker.yaw_goal_tolerance', Parameter.Type.DOUBLE, 0.05))
+                self.send_nav_goal(-0.1, 0.25, -3.0)
 
     def mySleep(self, sleepTime):
         if not self.amSleeping:
@@ -323,7 +323,7 @@ class Turtlebot3Full(Node):
 
     def goal_done_callback(self, msg: Bool) -> None:
         if msg.data and self.amNavigating:
-            self.get_logger().info('Navigation goal {self.step} completed.')
+            self.get_logger().info(f'Navigation goal {self.step} completed.')
             self.amNavigating = False
             self.step += 1
 
@@ -351,6 +351,29 @@ class Turtlebot3Full(Node):
         self.get_logger().info(
 
             f'Published nav goal: x={x}, y={y}, yaw={yaw}'
+        )
+
+        self.amNavigating = True
+
+    def send_turn_goal(self, yaw: float) -> None:
+        msg = PoseStamped()
+        msg.header.frame_id = 'map'
+        msg.header.stamp = self.get_clock().now().to_msg()
+
+        msg.pose.position.x = self.last_pose_x
+        msg.pose.position.y = self.last_pose_y
+        msg.pose.position.z = 0.0
+
+        z, w = self.yaw_to_quaternation(yaw)
+        msg.pose.orientation.x = 0.0
+        msg.pose.orientation.y = 0.0
+        msg.pose.orientation.z = z
+        msg.pose.orientation.w = w
+
+        self.goal_pub.publish(msg)
+        self.get_logger().info(
+
+            f'Published turn goal: yaw={yaw}'
         )
 
         self.amNavigating = True
