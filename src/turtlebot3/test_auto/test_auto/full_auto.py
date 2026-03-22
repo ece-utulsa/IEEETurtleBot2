@@ -153,6 +153,8 @@ class Turtlebot3Full(Node):
 
         self.amNavigating = False
 
+        self.auto_arms = True
+
         self.get_logger().info("finish init")
         
 
@@ -205,6 +207,8 @@ class Turtlebot3Full(Node):
     def odom_callback(self, msg: Odometry) -> None:
         self.last_pose_x = msg.pose.pose.position.x
         self.last_pose_y = msg.pose.pose.position.y
+        
+        self.vx = msg.twist.twist.linear.x
 
         qz = msg.pose.pose.orientation.z
         qw = msg.pose.pose.orientation.w
@@ -224,6 +228,13 @@ class Turtlebot3Full(Node):
         if self.backing_up:
             self.update_backup()
             return
+
+        if self.auto_arms:
+            if self.vx < 0:
+                send_spi_command(self.arms_out)
+            elif self.vx > 0:
+                send_spi_command(self.arms_in)
+
         
         if self.step == 0:
             send_spi_command(self.shovel_down)
@@ -250,10 +261,10 @@ class Turtlebot3Full(Node):
         elif self.step == 6:
             if not self.amNavigating:
                 self.send_nav_goal(-0.2, -0.20 , 2.7)
-            if not self.amSleeping:
-                self.altSleep(5)
-            if self.didSleep:
-                send_spi_command(self.arms_out)
+           # if not self.amSleeping:
+           #     self.altSleep(5)
+           # if self.didSleep:
+           #     send_spi_command(self.arms_out)
         elif self.step == 7:
             self.amSleeping = False
             self.didSleep = False
@@ -264,10 +275,10 @@ class Turtlebot3Full(Node):
             self.step += 1
         elif self.step == 9:
             self.start_backup(0.24)
-            if not self.amSleeping:      #probably won't do simultaneously. consider.
-                self.altSleep(1)
-            if self.didSleep:
-                send_spi_command(self.arms_out)
+           # if not self.amSleeping:      #probably won't do simultaneously. consider.
+           #     self.altSleep(1)
+           # if self.didSleep:
+           #     send_spi_command(self.arms_out)
         elif self.step == 10:
             self.didSleep = False
             self.amSleeping = False

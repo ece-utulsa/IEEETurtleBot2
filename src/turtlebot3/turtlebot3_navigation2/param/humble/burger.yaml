@@ -134,8 +134,21 @@ controller_server:
       xy_goal_tolerance: 0.18
       yaw_goal_tolerance: 0.3
 
-    # DWB parameters
+    #stupid path follower
     FollowPath:
+      plugin: "nav2_rotation_shim_controller::RotationShimController"
+      angular_dist_threshold: 0.3 # to match our yaw goal tolerance # was 0.785
+      forward_sampling_distance: 0.5 
+      angular_disengage_threshold: 0.3 #I don't think this should be smaller than angular_dist_threshold # was 0.3925
+      rotate_to_heading_angular_vel: 1.8
+      primary_controller: DWB # hopefully i did this right
+      max_angular_accel: 3.2
+      simulate_ahead_time: 1.0
+      rotate_to_goal_heading: true
+      rotate_to_heading_once: true #idk about this one, but i feel like we set too many paths to rotate each time
+
+    # DWB parameters
+    DWB:
       plugin: "dwb_core::DWBLocalPlanner"
       debug_trajectory_details: True
       angular_dist_threshold: 0.785
