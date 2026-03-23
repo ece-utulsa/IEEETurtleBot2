@@ -192,6 +192,7 @@ class Turtlebot3Full(Node):
         self.backup_start_y = self.last_pose_y
         self.backup_target = distance_m
         self.backup_speed = speed_mps
+        self.back_curr_speed = 0.005 * (abs(speed_mps) / speed_mps)
         self.backing_up = True
 
         self.get_logger().info(f'Starting backup for {distance_m} m')
@@ -209,9 +210,11 @@ class Turtlebot3Full(Node):
             self.backing_up = False
             self.step += 1
             return
-
+        if abs(self.back_curr_speed) < abs(self.backup_speed):
+            self.back_curr_speed += .001 * (abs(self.backup_speed) / self.backup_speed)
+        
         twist = Twist()
-        twist.linear.x = -self.backup_speed
+        twist.linear.x = -self.back_curr_speed
         twist.angular.z = 0.0
         self.cmd_vel_pub.publish(twist)
 
@@ -252,8 +255,8 @@ class Turtlebot3Full(Node):
                 send_spi_command(self.arms_out)
             elif self.vx > 0:
                 send_spi_command(self.arms_in)
+            
 
-        
         if self.step == 0:
             send_spi_command(self.shovel_down)
             self.get_logger().info('step 0')
@@ -278,7 +281,7 @@ class Turtlebot3Full(Node):
             self.step += 1
         elif self.step == 6:
             if not self.amNavigating:
-                self.send_nav_goal(-0.2, -0.20 , 2.7)
+                self.send_nav_goal(-0.2, -0.2, 2.9) #yaw was 2.7 
            # if not self.amSleeping:
            #     self.altSleep(5)
            # if self.didSleep:
@@ -287,7 +290,7 @@ class Turtlebot3Full(Node):
             self.amSleeping = False
             self.didSleep = False
             if not self.amNavigating:
-                self.send_nav_goal(0.1, -0.2, 2.7)
+                self.send_nav_goal(0.0, 0.0, 2.9) #was 0.1, -0.2, 2.7
         elif self.step == 8:
             send_spi_command(self.arms_in)
             self.step += 1
@@ -335,7 +338,7 @@ class Turtlebot3Full(Node):
             if not self.amNavigating:
                 #self.controller_server.set_parameters(Parameter('general_goal_checker.xy_goal_tolerance', Parameter.Type.DOUBLE, 0.1)) #TODO maybe should store the prev ones somewhere
                 #self.controller_server.set_parameters(Parameter('general_goal_checker.yaw_goal_tolerance', Parameter.Type.DOUBLE, 0.05))
-                self.send_nav_goal(0.0, 0.0, -3.0) 
+                self.send_nav_goal(-0.05, 0.1, -3.0) #was 0.0, 0.0, -3.0
 
     def mySleep(self, sleepTime):
         if not self.amSleeping:
