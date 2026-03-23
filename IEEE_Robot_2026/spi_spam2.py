@@ -28,11 +28,11 @@ while True:
     actuators_up = [0xAA, 0x03, 0x00]
     actuators_down = [0xAA, 0x03, 0x01]
     #send data to arduino!
-    spi.writebytes(arms_out)
-    print(f"Sent:     {arms_out}")
+    spi.writebytes(actuators_up)
+    print(f"Sent:     {actuators_up}")
 
     time.sleep(2)
 
-    spi.writebytes(arms_in)
-    print(f"Sent:    {arms_in}")
+    spi.writebytes(actuators_down)
+    print(f"Sent:    {actuators_down}")
     time.sleep(2)
