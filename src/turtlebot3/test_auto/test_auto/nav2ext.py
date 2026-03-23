@@ -29,6 +29,13 @@ class Nav2Ext(Node):
             10
         )
 
+        self.pos_sub = self.create_subscription(
+            PoseStamped,
+            '/nav2ext/pos_pose',
+            self.publish_init_helper,
+            10
+        )
+
 
         self.goal_done_pub = self.create_publisher(
             Bool,
@@ -66,6 +73,16 @@ class Nav2Ext(Node):
         w = math.cos(yaw / 2.0)
         return z, w
     
+    def publish_init_helper(self, msg):
+        x = msg.pose.position.x
+        y = msg.pose.position.y
+
+        z = msg.pose.orientation.z
+        w = msg.pose.orientation.w
+
+        yaw = 2.0 * math.atan2(z, w)
+        self.publish_initial_pose(x, y, yaw)
+
     def publish_initial_pose(self, x: float, y: float, yaw: float) -> None:
         msg = PoseWithCovarianceStamped()
         msg.header.frame_id = 'map'

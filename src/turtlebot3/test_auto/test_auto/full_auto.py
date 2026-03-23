@@ -12,7 +12,7 @@ import rclpy
 from rclpy.node import Node
 from rclpy.qos import QoSProfile
 from geometry_msgs.msg import PoseStamped
-
+from geometry_msgs.msg import PoseWithCovarianceStamped 
 from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
 
@@ -52,7 +52,9 @@ class Turtlebot3Full(Node):
         self.odom = Odometry()
         self.last_pose_x = 0.0
         self.last_pose_y = 0.0
-        self.last_pose_theta = 0.0 #i feel like we actually start at -1.7 or smth??
+        self.last_pose_theta = 0.0 
+        self.amcl_pose_z = 0.0
+        self.amcl_pose_w = 0.0
         self.goal_pose_x = 0.0
         self.goal_pose_y = 0.0
         self.goal_pose_theta = 0.0
@@ -70,10 +72,23 @@ class Turtlebot3Full(Node):
             10
         )
 
+        self.pos_pub = self.create_publisher(
+            PoseStamped,
+            '/nav2ext/pos_pose',
+            10
+        )
+
         self.goal_done_sub = self.create_subscription(
             Bool,
             '/nav2ext/goal_done',
             self.goal_done_callback,
+            10
+        )
+
+        self.amcl_sub = self.create_subscription(
+            PoseWithCovarianceStamped,
+            '/amcl',
+            self.amcl_callback,
             10
         )
 
@@ -109,11 +124,7 @@ class Turtlebot3Full(Node):
         self.processes.append(p2)
 
         self.wait_for_topic("/scan_filtered")
-
-        self.amSleeping = False
-
-        self.didSleep = False
-
+        
         p3 = subprocess.Popen(
             ["ros2", "launch", "turtlebot3_navigation2", "navigation2.launch.py", "map:=/home/robotics/desktop_ws/IEEETurtleBot2/src/turtlebot3/newest_map.yaml"],
             cwd="/home/robotics/desktop_ws/",
@@ -129,6 +140,8 @@ class Turtlebot3Full(Node):
         self.processes.append(p4)
 
         self.wait_for_topic("/nav2ext/goal_pose")
+
+        self.vx = 0
 
         self.arms_in = [0xAA, 0x02, 0x00]
         self.arms_out =  [0xAA,0x02,0x01]
@@ -150,6 +163,7 @@ class Turtlebot3Full(Node):
         self.navReady = True
 
         self.amSleeping = False
+        self.didSleep = False
 
         self.amNavigating = False
 
@@ -210,11 +224,15 @@ class Turtlebot3Full(Node):
         
         self.vx = msg.twist.twist.linear.x
 
-        qz = msg.pose.pose.orientation.z
-        qw = msg.pose.pose.orientation.w
-        self.last_pose_theta = 2.0 * math.atan2(qz, qw)
+        self.last_pose_z = msg.pose.pose.orientation.z
+        self.last_pose_w = msg.pose.pose.orientation.w
+        self.last_pose_theta = 2.0 * math.atan2(self.last_pose_z, self.last_pose_w)
 
         self.have_odom = True
+
+    def amcl_callback(self, msg: Odometry) -> None:
+        self.amcl_pose_w = msg.pose.pose.orientation.w
+        self.amcl_pose_z = msg.pose.pose.orientation.z
 
 
     def update_callback(self):
@@ -274,7 +292,7 @@ class Turtlebot3Full(Node):
             send_spi_command(self.arms_in)
             self.step += 1
         elif self.step == 9:
-            self.start_backup(0.24)
+            self.start_backup(0.34)
            # if not self.amSleeping:      #probably won't do simultaneously. consider.
            #     self.altSleep(1)
            # if self.didSleep:
@@ -306,17 +324,18 @@ class Turtlebot3Full(Node):
         elif self.step == 18:
             self.amSleeping = False
             send_spi_command(self.shovel_down)
+            self.send_new_pos(0.0146, -0.1217, self.last_pose_z, self.last_pose_w) #we calculated heading to be 2.48
             self.step += 1
         elif self.step == 19:
             self.mySleep(self.shovel_speed)
         elif self.step == 20:
-            self.start_backup(0.24, -0.08)
+            self.start_backup(0.34, -0.08)
         elif self.step == 21:
             self.amSleeping = False
             if not self.amNavigating:
                 #self.controller_server.set_parameters(Parameter('general_goal_checker.xy_goal_tolerance', Parameter.Type.DOUBLE, 0.1)) #TODO maybe should store the prev ones somewhere
                 #self.controller_server.set_parameters(Parameter('general_goal_checker.yaw_goal_tolerance', Parameter.Type.DOUBLE, 0.05))
-                self.send_nav_goal(-0.1, 0.25, -3.0) 
+                self.send_nav_goal(0.0, 0.0, -3.0) 
 
     def mySleep(self, sleepTime):
         if not self.amSleeping:
@@ -343,6 +362,25 @@ class Turtlebot3Full(Node):
         w = math.cos(yaw / 2.0)
         return z, w
     
+    def send_new_pos(self, x: float, y: float, z: float, w: float):
+        msg = PoseStamped()
+        msg.header.frame_id = 'map'
+        msg.header.stamp = self.get_clock().now().to_msg()
+
+        msg.pose.position.x = x
+        msg.pose.position.y = y
+        msg.pose.position.z = 0.0
+
+        msg.pose.orientation.x = 0.0
+        msg.pose.orientation.y = 0.0
+        msg.pose.orientation.z = z
+        msg.pose.orientation.w = w 
+
+        self.pos_pub.publish(msg)
+
+        self.get_logger().info('publish new pos est')
+
+
     def send_nav_goal(self, x: float, y: float, yaw: float) -> None:
         msg = PoseStamped()
         msg.header.frame_id = 'map'
