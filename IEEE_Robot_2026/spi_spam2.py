@@ -31,8 +31,8 @@ while True:
     spi.writebytes(actuators_up)
     print(f"Sent:     {actuators_up}")
 
-    time.sleep(10)
+    time.sleep(11)
 
     spi.writebytes(actuators_down)
     print(f"Sent:    {actuators_down}")
-    time.sleep(2)
+    time.sleep(11)
