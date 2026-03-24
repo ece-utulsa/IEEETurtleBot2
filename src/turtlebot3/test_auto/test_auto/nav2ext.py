@@ -58,9 +58,9 @@ class Nav2Ext(Node):
         self.nav_to_pose_client.wait_for_server()
         self.get_logger().info('Connected to navigate_to_pose action server.')
 
-        initial_x = -0.0375
-        initial_y = -0.4044
-        initial_yaw = 0.448 
+        initial_x = -0.265 #was -0.0375 when lidar facing cave
+        initial_y = -0.335 #was -0.4044 when lidar facing cave
+        initial_yaw = self.quarternion_to_yaw(0.846, 0.534) #was 0.448 when lidar facing cave 
 
         self.publish_initial_pose(initial_x, initial_y, initial_yaw)
         time.sleep(1)
@@ -72,6 +72,8 @@ class Nav2Ext(Node):
         z = math.sin(yaw / 2.0)
         w = math.cos(yaw / 2.0)
         return z, w
+    def quarternion_to_yaw(self, z: float, w: float) -> float:
+        return 2.0 * math.atan2(z, w)
     
     def publish_init_helper(self, msg):
         x = msg.pose.position.x
@@ -92,7 +94,7 @@ class Nav2Ext(Node):
         msg.pose.pose.position.y = y
         msg.pose.pose.position.z = 0.0
 
-        z, w = self.yaw_to_quaternation(yaw)
+        z, w = self.yaw_to_quaternation(yaw) #i don't like having to do this twice when we start with z and w, but whatever
         msg.pose.pose.orientation.x = 0.0
         msg.pose.pose.orientation.y = 0.0
         msg.pose.pose.orientation.z = z

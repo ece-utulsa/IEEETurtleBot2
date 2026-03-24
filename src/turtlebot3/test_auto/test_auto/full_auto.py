@@ -61,6 +61,8 @@ class Turtlebot3Full(Node):
 
         self.have_odom = False
         self.backing_up = False
+        self.turning = False
+        
         self.backup_start_x = 0.0
         self.backup_start_y = 0.0
         self.backup_target = 0.0
@@ -216,6 +218,56 @@ class Turtlebot3Full(Node):
         twist.linear.x = -self.back_curr_speed
         twist.angular.z = 0.0
         self.cmd_vel_pub.publish(twist)
+    
+    def start_turn(self, distance_rad: float, speed_mps: float = 0.08) -> None:
+        if not self.have_odom:
+            self.get_logger().warn('no odom yet, cannot start backup')
+            return
+
+        self.turn_start_theta = self.last_pose_theta
+        if self.turn_start_theta > 6.3:
+            self.turn_start_theta -= 6.28
+        elif self.turn_start_theta < 0:
+            self.turn_start_theta += 6.28
+        
+        self.turn_target = distance_rad
+        if self.turn_target > 6.3:
+            self.turn_target -= 6.28
+        elif self.turn_target < 0:
+            self.turn_target += 6.28
+        
+        self.turn_speed = speed_mps
+        self.turn_curr_speed = 0.05 * (abs(speed_mps) / speed_mps)
+        self.turning = True
+
+        self.get_logger().info(f'Starting turn for {distance_rad} rad')
+
+    def update_turn(self) -> None:
+        curr_theta = self.last_pose_theta
+        if curr_theta > 6.3:
+            curr_theta -= 6.28
+        elif curr_theta < 0:
+            curr_theta += 6.28
+    
+        traveled = curr_theta - self.turn_start_theta
+
+        self.get_logger().info(f'turned {traveled:.3f} rad')
+
+        #if traveled > 0: TODO rn we only turn one direction
+        if traveled >= self.turn_target - 0.5 and traveled <= self.turn_target + 0.5: #TODO this is janky
+            self.stop_robot()
+            self.get_logger().info('Turn complete.')
+            self.turning = False
+            self.step += 1
+            return
+        if abs(self.turn_curr_speed) < abs(self.turn_speed):
+            self.turn_curr_speed += .005 * (abs(self.turn_speed) / self.turn_speed)
+        
+        twist = Twist()
+        twist.linear.x = 0.0
+        twist.angular.z = self.turn_curr_speed
+        self.cmd_vel_pub.publish(twist)
+        self.get_logger().info(f'current speed: {self.turn_curr_speed:.3f} rad/s')
 
     def stop_robot(self) -> None:
         self.cmd_vel_pub.publish(Twist())
@@ -248,6 +300,10 @@ class Turtlebot3Full(Node):
         if self.backing_up:
             self.update_backup()
             return
+        
+        if self.turning:
+            self.update_turn()
+            return
 
         if self.auto_arms:
             if self.vx < 0:
@@ -269,73 +325,77 @@ class Turtlebot3Full(Node):
             self.amSleeping = False
             self.step += 1
         elif self.step == 2:
-            self.start_backup(0.57, 0.15)
+            self.start_backup(0.25, -0.15)
         elif self.step == 3:
+            self.start_turn(-1.7, -0.5) #make the signs match and i think it turns the right direction?
+        elif self.step == 4:
+            self.start_backup(0.57, 0.15)
+        elif self.step == 5:
             send_spi_command(self.arms_in)
             self.step += 1
-        elif self.step == 4:
+        elif self.step == 6:
             self.mySleep(1)
-        elif self.step == 5:
+        elif self.step == 7:
             self.amSleeping = False
             self.step += 1
-        elif self.step == 6:
+        elif self.step == 8:
             #empty rn
             self.step += 1
-        elif self.step == 7:
+        elif self.step == 9:
             if not self.amNavigating:
                 self.send_nav_goal(-0.2, -0.2, -2.9) #yaw was -1.57
            # if not self.amSleeping:
            #     self.altSleep(5)
            # if self.didSleep:
            #     send_spi_command(self.arms_out)
-        elif self.step == 8:
+        elif self.step == 10:
             self.amSleeping = False
             self.didSleep = False
             if not self.amNavigating:
                 self.send_nav_goal(0.0, 0.0, 2.9)
-        elif self.step == 9:
+        elif self.step == 11:
             send_spi_command(self.arms_in)
             self.step += 1
-        elif self.step == 10:
+        elif self.step == 12:
             self.start_backup(0.34)
            # if not self.amSleeping:      #probably won't do simultaneously. consider.
            #     self.altSleep(1)
            # if self.didSleep:
            #     send_spi_command(self.arms_out)
-        elif self.step == 11:
+        elif self.step == 13:
             self.didSleep = False
             self.amSleeping = False
             self.step += 1
-        elif self.step == 12:
+        elif self.step == 14:
             self.mySleep(1)
-        elif self.step == 13:
+        elif self.step == 15:
             self.amSleeping = False
             send_spi_command(self.shovel_up)
             self.step += 1
-        elif self.step == 14:
-            self.mySleep(self.shovel_speed)
-        elif self.step == 15:
-            self.amSleeping = False
-            send_spi_command(self.actuators_down)
-            self.step += 1
         elif self.step == 16:
-            self.mySleep(self.actuator_speed)
+            self.mySleep(self.shovel_speed)
         elif self.step == 17:
             self.amSleeping = False
-            send_spi_command(self.actuators_up)
+            send_spi_command(self.actuators_down)
             self.step += 1
         elif self.step == 18:
             self.mySleep(self.actuator_speed)
         elif self.step == 19:
             self.amSleeping = False
+            send_spi_command(self.actuators_up)
+            self.step += 1
+        elif self.step == 20:
+            self.mySleep(self.actuator_speed)
+        elif self.step == 21:
+            self.amSleeping = False
             send_spi_command(self.shovel_down)
             self.send_new_pos(0.0146, -0.1217, self.last_pose_z, self.last_pose_w)
             self.step += 1
-        elif self.step == 20:
-            self.mySleep(self.shovel_speed)
-        elif self.step == 21:
-            self.start_backup(0.34, -0.08)
         elif self.step == 22:
+            self.mySleep(self.shovel_speed)
+        elif self.step == 23:
+            self.start_backup(0.34, -0.08)
+        elif self.step == 24:
             self.amSleeping = False
             if not self.amNavigating:
                 #self.controller_server.set_parameters(Parameter('general_goal_checker.xy_goal_tolerance', Parameter.Type.DOUBLE, 0.1)) #TODO maybe should store the prev ones somewhere
