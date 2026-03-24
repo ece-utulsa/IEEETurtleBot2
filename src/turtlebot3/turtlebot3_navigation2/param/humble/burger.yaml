@@ -18,8 +18,8 @@ amcl:
     laser_min_range: 0.1
     laser_model_type: "likelihood_field"
     max_beams: 60
-    max_particles: 2000 #was 2000
-    min_particles: 500 #was 500
+    max_particles: 2000
+    min_particles: 500
     odom_frame_id: "odom"
     pf_err: 0.05
     pf_z: 0.99
@@ -138,26 +138,26 @@ controller_server:
       plugin: "dwb_core::DWBLocalPlanner"
       debug_trajectory_details: True
       angular_dist_threshold: 0.785
-      rotate_to_heading_angular_vel: 1.0
+      rotate_to_heading_angular_vel: 1.8 # was 1.0
       max_angular_accel: 2.5
       simulate_ahead_time: 1.0
       rotate_to_goal_heading: True
-      min_vel_x: -0.3 #was 0.0
+      min_vel_x: -0.4 #was 0.0, was -0.3
       min_vel_y: 0.0
-      max_vel_x: 0.3 #was 0.3
+      max_vel_x: 0.4 #was 0.3
       max_vel_y: 0.0
-      max_vel_theta: 1.5
+      max_vel_theta: 2.5 # was 1.5, was 2.0
       min_speed_xy: 0.0
       max_speed_xy: 0.22
-      min_speed_theta: 0.1
+      min_speed_theta: 0.5 # was 0.1
       # Add high threshold velocity for turtlebot 3 issue.
       # https://github.com/ROBOTIS-GIT/turtlebot3_simulations/issues/75
-      acc_lim_x: 2.5
+      acc_lim_x: 2.5 
       acc_lim_y: 0.0
-      acc_lim_theta: 3.2
+      acc_lim_theta: 1.5 # was 3.2, was 1.0
       decel_lim_x: -2.5
       decel_lim_y: 0.0
-      decel_lim_theta: -3.2
+      decel_lim_theta: -2.0 # was -3.2
       vx_samples: 20
       vy_samples: 0
       vtheta_samples: 40
@@ -355,9 +355,9 @@ recoveries_server:
     transform_timeout: 0.1
     use_sim_time: False # was true, lower case, idk why
     simulate_ahead_time: 2.0
-    max_rotational_vel: 1.0
+    max_rotational_vel: 2.0 # was 1.0 
     min_rotational_vel: 0.1 # was 0.4
-    rotational_acc_lim: 3.2
+    rotational_acc_lim: 1.0 # was 3.2
 
 robot_state_publisher:
   ros__parameters:

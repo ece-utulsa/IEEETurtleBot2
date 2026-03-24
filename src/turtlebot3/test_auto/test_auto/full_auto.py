@@ -270,7 +270,7 @@ class Turtlebot3Full(Node):
             self.amSleeping = False
             self.step += 1
         elif self.step == 2:
-            self.start_backup(0.52, 0.15)
+            self.start_backup(0.57, 0.15)
         elif self.step == 3:
             send_spi_command(self.arms_in)
             self.step += 1
