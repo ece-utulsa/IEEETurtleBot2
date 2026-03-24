@@ -115,7 +115,6 @@ class Turtlebot3Full(Node):
         self.processes.append(p1)
         
         self.wait_for_topic("/odom")
-        
 
         p2 = subprocess.Popen(
             ["ros2", "run", "test_auto", "scan_filter"],
@@ -124,14 +123,14 @@ class Turtlebot3Full(Node):
         self.processes.append(p2)
 
         self.wait_for_topic("/scan_filtered")
-        
+
         p3 = subprocess.Popen(
             ["ros2", "launch", "turtlebot3_navigation2", "navigation2.launch.py", "map:=/home/robotics/desktop_ws/IEEETurtleBot2/src/turtlebot3/newest_map.yaml"],
             cwd="/home/robotics/desktop_ws/",
         )
         self.processes.append(p3)
 
-        self.wait_for_topic("/amcl_pose")
+        self.altSleep(5)
 
         p4 = subprocess.Popen(
             ["ros2", "run", "test_auto", "nav2ext"],
@@ -280,65 +279,67 @@ class Turtlebot3Full(Node):
             self.amSleeping = False
             self.step += 1
         elif self.step == 6:
+            self.start_backup(0.55, -0.1)
+        elif self.step == 7:
             if not self.amNavigating:
-                self.send_nav_goal(-0.2, -0.2, 2.9) #yaw was 2.7 
+                self.send_nav_goal(-0.2, -0.2, -2) #yaw was -1.57
            # if not self.amSleeping:
            #     self.altSleep(5)
            # if self.didSleep:
            #     send_spi_command(self.arms_out)
-        elif self.step == 7:
+        elif self.step == 8:
             self.amSleeping = False
             self.didSleep = False
             if not self.amNavigating:
-                self.send_nav_goal(0.0, 0.0, 2.9) #was 0.1, -0.2, 2.7
-        elif self.step == 8:
+                self.send_nav_goal(0.32, 0.22, 2.9)
+        elif self.step == 9:
             send_spi_command(self.arms_in)
             self.step += 1
-        elif self.step == 9:
+        elif self.step == 10:
             self.start_backup(0.34)
            # if not self.amSleeping:      #probably won't do simultaneously. consider.
            #     self.altSleep(1)
            # if self.didSleep:
            #     send_spi_command(self.arms_out)
-        elif self.step == 10:
+        elif self.step == 11:
             self.didSleep = False
             self.amSleeping = False
             self.step += 1
-        elif self.step == 11:
-            self.mySleep(1)
         elif self.step == 12:
+            self.mySleep(1)
+        elif self.step == 13:
             self.amSleeping = False
             send_spi_command(self.shovel_up)
             self.step += 1
-        elif self.step == 13:
-            self.mySleep(self.shovel_speed)
         elif self.step == 14:
+            self.mySleep(self.shovel_speed)
+        elif self.step == 15:
             self.amSleeping = False
             send_spi_command(self.actuators_down)
             self.step += 1
-        elif self.step == 15:
-            self.mySleep(self.actuator_speed)
         elif self.step == 16:
+            self.mySleep(self.actuator_speed)
+        elif self.step == 17:
             self.amSleeping = False
             send_spi_command(self.actuators_up)
             self.step += 1
-        elif self.step == 17:
-            self.mySleep(self.actuator_speed)
         elif self.step == 18:
+            self.mySleep(self.actuator_speed)
+        elif self.step == 19:
             self.amSleeping = False
             send_spi_command(self.shovel_down)
-            self.send_new_pos(0.0146, -0.1217, self.last_pose_z, self.last_pose_w) #we calculated heading to be 2.48
+            self.send_new_pos(0.0146, -0.1217, self.last_pose_z, self.last_pose_w)
             self.step += 1
-        elif self.step == 19:
-            self.mySleep(self.shovel_speed)
         elif self.step == 20:
-            self.start_backup(0.34, -0.08)
+            self.mySleep(self.shovel_speed)
         elif self.step == 21:
+            self.start_backup(0.34, -0.08)
+        elif self.step == 22:
             self.amSleeping = False
             if not self.amNavigating:
                 #self.controller_server.set_parameters(Parameter('general_goal_checker.xy_goal_tolerance', Parameter.Type.DOUBLE, 0.1)) #TODO maybe should store the prev ones somewhere
                 #self.controller_server.set_parameters(Parameter('general_goal_checker.yaw_goal_tolerance', Parameter.Type.DOUBLE, 0.05))
-                self.send_nav_goal(-0.05, 0.1, -3.0) #was 0.0, 0.0, -3.0
+                self.send_nav_goal(-0.05, 0.1, -3.0) 
 
     def mySleep(self, sleepTime):
         if not self.amSleeping:
