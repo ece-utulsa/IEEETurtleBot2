@@ -279,10 +279,11 @@ class Turtlebot3Full(Node):
             self.amSleeping = False
             self.step += 1
         elif self.step == 6:
-            self.start_backup(0.55, -0.1)
+            #empty rn
+            self.step += 1
         elif self.step == 7:
             if not self.amNavigating:
-                self.send_nav_goal(-0.2, -0.2, -2) #yaw was -1.57
+                self.send_nav_goal(-0.2, -0.2, -2.9) #yaw was -1.57
            # if not self.amSleeping:
            #     self.altSleep(5)
            # if self.didSleep:
@@ -291,7 +292,7 @@ class Turtlebot3Full(Node):
             self.amSleeping = False
             self.didSleep = False
             if not self.amNavigating:
-                self.send_nav_goal(0.32, 0.22, 2.9)
+                self.send_nav_goal(0.0, 0.0, 2.9)
         elif self.step == 9:
             send_spi_command(self.arms_in)
             self.step += 1
