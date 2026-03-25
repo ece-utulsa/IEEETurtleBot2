@@ -1,13 +1,55 @@
-import spidev
-import time
+from gpiozero import DigitalOutputDevice
+from gpiozero import DigitalInputDevice
+from time import sleep
 
-spi = spidev.SpiDev()
-spi.open(0, 0)   # bus 0, CE0
-spi.max_speed_hz = 10000
-spi.mode = 0
+dump_shovel = DigitalOutputDevice(8)
+return_shovel = DigitalOutputDevice(23)
+arms_in = DigitalOutputDevice(25)
+arms_out = DigitalOutputDevice(24)
 
-while True:
-    data = [0xAA, 0x01, 0x02]
-    print("Sending:", data)
-    spi.xfer2(data)  # use xfer2 for full-duplex
-    time.sleep(1)
+busy = DigitalInputDevice(6, pull_up = False)
+
+def dump():
+    dump_shovel.on()
+
+    while True:
+        if not busy.is_active:
+            dump_shovel.off()
+            break
+        sleep(0.1)
+
+def reset_shovel():
+    return_shovel.on()
+
+    while True:
+        if not busy.is_active:
+            return_shovel.off()
+            break
+        sleep(0.1)
+
+def arm_in():
+    arms_in.on()
+
+    while True:
+        if not busy.is_active:
+            arms_in.off()
+            break
+        sleep(0.1)
+def arm_out():
+    arms_out.on()
+
+    while True:
+        if not busy.is_active:
+            arms_out.off()
+            break
+        sleep(0.1)
+
+
+# examples
+dump()
+sleep(2)
+reset_shovel()
+sleep(2)
+arm_in()
+sleep(2)
+arm_out()
