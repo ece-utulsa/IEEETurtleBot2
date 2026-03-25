@@ -74,6 +74,7 @@ void setup() {
   servos.setPWM(RIGHT_SERVO, 0, SERVOMAX);
 
   // TESTING
+  returnShovel();
 }
 
 void loop() {
