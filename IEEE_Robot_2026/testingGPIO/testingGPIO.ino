@@ -1,0 +1,167 @@
+#include <Wire.h>
+#include <Arduino.h>
+#include <Adafruit_PWMServoDriver.h>
+
+// PI - Arduino Communication
+#define DUMP_SHOVEL A3
+#define RETURN_SHOVEL A4
+#define ARMS_IN A2
+#define ARMS_OUT A5
+
+// Actuators
+#define RELAY_PIN_UP 9
+#define RELAY_PIN_DOWN 8
+
+//Stepper Motors
+#define ENA_1 7
+#define DIR_1 3
+#define STEP_1 4
+
+#define LIMIT_SWITCH 2
+bool limitTrigger = false;
+
+// Servos
+Adafruit_PWMServoDriver servos = Adafruit_PWMServoDriver();
+#define SERVOMIN 110  // about 0 degrees
+#define SERVOMAX 500  // about 180 degrees
+#define SERVO_FREQ 50
+#define LEFT_SERVO 2
+#define RIGHT_SERVO 3
+
+// Start Light Sensor
+#define PHOTOCELL_F A0
+#define PHOTOCELL_B A1
+#define TELL_PI 12
+int frontReading;
+int backReading;
+bool start = false;
+
+// Debouncing
+#define DEBOUNCE_DELAY 100
+unsigned long lastDebounceTime = 0;
+
+void setup() {
+  Serial.begin(115200);
+
+  // Setup Pi - Arduino Communication
+  pinMode(DUMP_SHOVEL, INPUT);
+  pinMode(RETURN_SHOVEL, INPUT);
+  pinMode(ARMS_IN, INPUT);
+  pinMode(ARMS_OUT, INPUT);
+
+  // Setup Start LED
+  pinMode(PHOTOCELL_F, INPUT);
+  pinMode(PHOTOCELL_B, INPUT);
+  pinMode(TELL_PI, OUTPUT);
+  digitalWrite(TELL_PI, LOW);
+
+  // Setup Actuators
+  pinMode(RELAY_PIN_UP, OUTPUT);
+  digitalWrite(RELAY_PIN_UP, LOW);
+  pinMode(RELAY_PIN_DOWN, OUTPUT);
+  digitalWrite(RELAY_PIN_DOWN, LOW);  // actuators off
+
+  // Setup Stepper Motor
+  pinMode(ENA_1, OUTPUT);
+  pinMode(DIR_1, OUTPUT);
+  pinMode(STEP_1, OUTPUT);
+  digitalWrite(ENA_1, LOW);
+  pinMode(LIMIT_SWITCH, INPUT_PULLUP);
+  attachInterrupt(digitalPinToInterrupt(LIMIT_SWITCH), switchInterrupt, FALLING);
+
+  // Setup Servos
+  servos.begin();
+  servos.setPWMFreq(SERVO_FREQ);
+  servos.setPWM(LEFT_SERVO, 0, SERVOMIN);
+  servos.setPWM(RIGHT_SERVO, 0, SERVOMAX);
+
+  // TESTING
+}
+
+void loop() {
+  if (!start) {
+    start = startLED();
+  }
+
+  if (digitalRead(DUMP_SHOVEL)) {
+    dumpShovel();
+  } else if (digitalRead(RETURN_SHOVEL)) {
+    returnShovel();
+  } else if (digitalRead(ARMS_IN)) {
+    turnServos(0);
+  } else if (digitalRead(ARMS_OUT)) {
+    turnServos(1);
+  }
+}
+
+void dumpShovel() {
+  // Open Arms
+  servos.setPWM(LEFT_SERVO, 0, (SERVOMAX - 200));
+  servos.setPWM(RIGHT_SERVO, 0, (SERVOMIN + 200));
+
+  // Raise Shovel
+  digitalWrite(DIR_1, HIGH);
+  for (int i = 0; i < 3300; i++) {
+    digitalWrite(STEP_1, HIGH);
+    delay(1);
+    digitalWrite(STEP_1, LOW);
+    delay(1);
+  }
+
+  // Tilt Bucket
+  digitalWrite(RELAY_PIN_UP, LOW);
+  digitalWrite(RELAY_PIN_DOWN, HIGH);
+  delay(10000);
+  digitalWrite(RELAY_PIN_UP, LOW);
+  digitalWrite(RELAY_PIN_DOWN, LOW);
+}
+
+void returnShovel() {
+  // Un-tilt Bucket
+  digitalWrite(RELAY_PIN_UP, HIGH);
+  digitalWrite(RELAY_PIN_DOWN, LOW);
+  delay(10000);
+  digitalWrite(RELAY_PIN_UP, LOW);
+  digitalWrite(RELAY_PIN_DOWN, LOW);
+
+  //Lower Shovel
+  digitalWrite(DIR_1, LOW);
+  while (digitalRead(LIMIT_SWITCH)) {
+    digitalWrite(STEP_1, HIGH);
+    delay(1);
+    digitalWrite(STEP_1, LOW);
+    delay(1);
+  }
+
+  // Close Arms
+  servos.setPWM(LEFT_SERVO, 0, SERVOMIN);
+  servos.setPWM(RIGHT_SERVO, 0, SERVOMAX);
+}
+
+void turnServos(int direction) {
+  if (direction == 0) {  // IN
+    servos.setPWM(LEFT_SERVO, 0, SERVOMIN);
+    servos.setPWM(RIGHT_SERVO, 0, SERVOMAX);
+  } else if (direction == 1) {  // OUT
+    servos.setPWM(LEFT_SERVO, 0, (SERVOMAX - 200));
+    servos.setPWM(RIGHT_SERVO, 0, (SERVOMIN + 200));
+  }
+}
+
+bool startLED() {
+  bool trigger = false;
+  frontReading = analogRead(PHOTOCELL_F);
+  backReading = analogRead(PHOTOCELL_B);
+  if (backReading - frontReading >= 200) {
+    trigger = true;
+    digitalWrite(TELL_PI, HIGH);
+  }
+  return trigger;
+}
+
+void switchInterrupt() {
+  if (millis() - lastDebounceTime > DEBOUNCE_DELAY) {
+    limitTrigger = true;
+    lastDebounceTime = millis();
+  }
+}
