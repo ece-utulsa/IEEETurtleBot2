@@ -63,6 +63,7 @@ class Turtlebot3Full(Node):
         self.goal_pose_theta = 0.0
 
         self.have_odom = False
+        self.have_amcl = False
         self.backing_up = False
         self.turning = False
         
@@ -92,7 +93,7 @@ class Turtlebot3Full(Node):
 
         self.amcl_sub = self.create_subscription(
             PoseWithCovarianceStamped,
-            '/amcl',
+            '/amcl_pose',
             self.amcl_callback,
             10
         )
@@ -144,6 +145,7 @@ class Turtlebot3Full(Node):
         self.processes.append(p4)
 
         self.wait_for_topic("/nav2ext/goal_pose")
+        self.wait_for_topic("/amcl_pose")
 
         self.vx = 0
 
@@ -160,7 +162,7 @@ class Turtlebot3Full(Node):
 
         self.auto_arms = True
 
-        self.turn_start_theta = self.last_pose_theta
+        self.turn_start_theta = self.quarternion_to_yaw(self.amcl_pose_z, self.amcl_pose_w)
         self.initial_x = self.last_pose_x
         self.initial_y = self.last_pose_y
 
@@ -175,7 +177,9 @@ class Turtlebot3Full(Node):
                 self.get_logger().info(f'Topic {topic_name} is available')
                 return True
             if timeout_sec is not None and (time.time() - start) > timeout_sec:
+                self.get_logger().info(f'Timed out waiting for {topic_name}')
                 return False
+            self.get_logger().info(f'H Waiting for topic {topic_name}...')
 
 
     def start_backup(self, distance_m: float, speed_mps: float = 0.08) -> None:
@@ -215,8 +219,8 @@ class Turtlebot3Full(Node):
     
     #GUYS THIS IS ABSOLUTE to start position in square NOT RELATIVE LIKE BACKUP IS
     def start_turn(self, distance_rad: float, speed_mps: float = 0.08) -> None:
-        if not self.have_odom:
-            self.get_logger().warn('no odom yet, cannot start backup')
+        if not self.have_amcl:
+            self.get_logger().warn('no amcl yet, cannot start turn')
             return
         
         if self.turn_start_theta > 6.3:
@@ -237,18 +241,16 @@ class Turtlebot3Full(Node):
         self.get_logger().info(f'Starting turn for {distance_rad} rad')
 
     def update_turn(self) -> None:
-        #curr_theta = math.atan2(self.amcl_pose_z, self.amcl_pose_w) * 2.0 #TODO is amcl too slow, or could i use this? would amcl be faster if it wasn't running all those other nodes? or if i changed a number in the yaml?
-        curr_theta = self.last_pose_theta
+        curr_theta = math.atan2(self.amcl_pose_z, self.amcl_pose_w) * 2.0 + self.turn_start_theta #TODO is amcl too slow, or could i use this? would amcl be faster if it wasn't running all those other nodes? or if i changed a number in the yaml?
+        #curr_theta = self.last_pose_theta
         if curr_theta > 6.28:
             curr_theta -= 6.28
         elif curr_theta < 0:
             curr_theta += 6.28
-    
-        traveled = curr_theta - self.turn_start_theta
 
-        #self.get_logger().info(f'turned {curr_theta:.3f} - {self.turn_start_theta:.3f} = {traveled:.3f} rad')
+        self.get_logger().info(f'curr is {self.curr_theta} and target is {self.turn_target}')
 
-        if traveled >= self.turn_target - 0.25 and traveled <= self.turn_target + 0.25:
+        if self.curr_theta >= self.turn_target - 0.25 and self.curr_theta <= self.turn_target + 0.25:
             self.stop_robot()
             self.get_logger().info('Turn complete.')
             self.turning = False
@@ -281,6 +283,8 @@ class Turtlebot3Full(Node):
     def amcl_callback(self, msg: Odometry) -> None:
         self.amcl_pose_w = msg.pose.pose.orientation.w
         self.amcl_pose_z = msg.pose.pose.orientation.z
+        self.have_amcl = True
+        self.get_logger().info('amcl callback ran')
 
 
     def update_callback(self):
@@ -290,6 +294,7 @@ class Turtlebot3Full(Node):
         if self.goal_pub.get_subscription_count() <1:
             self.get_logger().info('Waiting for nav2ext subscriber')
             return
+
 
         if self.backing_up:
             self.update_backup()
@@ -316,9 +321,9 @@ class Turtlebot3Full(Node):
             self.start_backup(0.15, -0.15) #away from wall
         elif self.step == 2:
             self.get_logger().info('step 3')
-            arm_out()
-            self.start_turn(-1.6, -0.3) #turn away from cave
-        elif self.step == 3:
+            send_spi_command(self.arms_out)
+            self.start_turn(-1.6, -0.5) #turn away from cave
+        elif self.step == 4:
             self.get_logger().info('step 4')
             self.start_backup(0.50, 0.15) #was 0.57 #drive to far end
         elif self.step == 4:
@@ -331,8 +336,8 @@ class Turtlebot3Full(Node):
         elif self.step == 6:
             self.get_logger().info('step 7')
             self.amSleeping = False
-            self.start_turn(2.0, -0.5) #turn toward cave end/center of field
-        elif self.step == 7:
+            self.start_turn(2.0, -0.75) #turn toward cave end/center of field
+        elif self.step == 8:
             self.get_logger().info('step 8')
             self.start_backup(0.67, 0.15) #drive to middle of field (replacing that old intermediate pose)
         elif self.step == 8:
@@ -384,13 +389,13 @@ class Turtlebot3Full(Node):
             self.start_backup(0.34, -0.08) #TODO i wish this could use amcl, or at least based on the initial_x and initial_y so it forgets all of the slips its done since then?
         elif self.step == 23:
             self.amSleeping = False
-            self.start_turn(1.65, 0.5) #turn to face cave #TODO i wish this could use amcl, or at least based on the initial_x and initial_y so it forgets all of the slips its done since then?
+            self.start_turn(1.85, 0.5) #turn to face cave #TODO i wish this could use amcl, or at least based on the initial_x and initial_y so it forgets all of the slips its done since then?
             #if not self.amNavigating:
                 #self.controller_server.set_parameters(Parameter('general_goal_checker.xy_goal_tolerance', Parameter.Type.DOUBLE, 0.1)) #TODO maybe should store the prev ones somewhere
                 #self.controller_server.set_parameters(Parameter('general_goal_checker.yaw_goal_tolerance', Parameter.Type.DOUBLE, 0.05))
                 #self.send_nav_goal(-0.05, 0.1, -3.0) #TODO: better with nav or manual?
-        elif self.step == 24:
-            self.start_backup(0.75) #robot becomes in the cave!
+        elif self.step == 25:
+            self.start_backup(1.5) #robot becomes in the cave!
 
     def mySleep(self, sleepTime):
         if not self.amSleeping:
