@@ -30,6 +30,8 @@ Adafruit_PWMServoDriver servos = Adafruit_PWMServoDriver();
 #define SERVOMIN 110  // about 0 degrees
 #define SERVOMAX 500  // about 180 degrees
 #define SERVO_FREQ 50
+#define LEFT_SERVO 2
+#define RIGHT_SERVO 3
 
 // Start Light Sensor
 #define PHOTOCELL_F A0
@@ -74,8 +76,8 @@ void setup() {
   // Setup Servos
   servos.begin();
   servos.setPWMFreq(SERVO_FREQ);
-  servos.setPWM(0, 0, SERVOMIN);
-  servos.setPWM(1, 0, SERVOMAX);
+  servos.setPWM(LEFT_SERVO, 0, SERVOMIN);
+  servos.setPWM(RIGHT_SERVO, 0, SERVOMAX);
 
   // TESTING
   //turnServos(0x00);
@@ -125,7 +127,7 @@ void loop() {
 void motorStep(int direction) {
   if (direction == 0) {  // move down
     digitalWrite(DIR_1, LOW);
-    while (!limitTrigger) {
+    while (digitalRead(LIMIT_SWITCH)) {
       digitalWrite(STEP_1, HIGH);
       delay(1);
       digitalWrite(STEP_1, LOW);
@@ -163,11 +165,11 @@ void actuators(int setting) {
 
 void turnServos(int direction) {
   if (direction == 0) {
-    servos.setPWM(0, 0, SERVOMIN);
-    servos.setPWM(1, 0, SERVOMAX);
+    servos.setPWM(LEFT_SERVO, 0, SERVOMIN);
+    servos.setPWM(RIGHT_SERVO, 0, SERVOMAX);
   } else if (direction == 1) {
-    servos.setPWM(0, 0, (SERVOMAX - 200));
-    servos.setPWM(1, 0, (SERVOMIN + 200));
+    servos.setPWM(LEFT_SERVO, 0, (SERVOMAX - 200));
+    servos.setPWM(RIGHT_SERVO, 0, (SERVOMIN + 200));
   }
 }
 

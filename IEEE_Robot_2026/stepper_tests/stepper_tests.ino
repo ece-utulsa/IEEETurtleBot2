@@ -1,27 +1,178 @@
-//SLAVE CODE
+#include <Wire.h>
+#include <Arduino.h>
+#include <Adafruit_PWMServoDriver.h>
 
-#include <SPI.h>
+// PI - Arduino Communication
+#define SHOVEL_UP A3
+#define SHOVEL_DOWN A4
+#define ARMS_IN A2
+#define ARMS_OUT A5
+#define ACTUATOR_UP A1
+#define ACTUATOR_DOWN A6
 
-//Received byte from Master
-volatile byte recv_byte;
+// Actuators
+#define RELAY_PIN_UP 9
+#define RELAY_PIN_DOWN 8
+
+//Stepper Motors
+#define ENA_1 7
+#define DIR_1 3
+#define STEP_1 4
+
+#define LIMIT_SWITCH 2
+bool limitTrigger = false;
+
+// Servos
+Adafruit_PWMServoDriver servos = Adafruit_PWMServoDriver();
+#define SERVOMIN 110  // about 0 degrees
+#define SERVOMAX 500  // about 180 degrees
+#define SERVO_FREQ 50
+#define LEFT_SERVO 2
+#define RIGHT_SERVO 3
+
+// Start Light Sensor
+#define PHOTOCELL_F A0
+#define PHOTOCELL_B A1
+#define TELL_PI 12
+int frontReading;
+int backReading;
+bool start = false;
+
+// Debouncing
+#define DEBOUNCE_DELAY 100
+unsigned long lastDebounceTime = 0;
 
 void setup() {
-  // put your setup code here, to run once:
-  Serial.begin(115200); // for debugging.
+  Serial.begin(115200);
 
-  // Turn ON SPI in slave mode.
-  SPCR |= bit(SPE);
-  // Have to send on MASTER IN, SLAVE OUT
-  pinMode(MISO,OUTPUT);
-} // end of setup
+  // Setup Pi - Arduino Communication
+  pinMode(SHOVEL_UP, INPUT);
+  pinMode(SHOVEL_DOWN, INPUT);
+  pinMode(ARMS_IN, INPUT);
+  pinMode(ARMS_OUT, INPUT);
+  pinMode(ACTUATOR_UP, INPUT);
+  pinMode(ACTUATOR_DOWN, INPUT);
+
+  // Setup Start LED
+  pinMode(PHOTOCELL_F, INPUT);
+  pinMode(PHOTOCELL_B, INPUT);
+  pinMode(TELL_PI, OUTPUT);
+  digitalWrite(TELL_PI, LOW);
+
+  // Setup Actuators
+  pinMode(RELAY_PIN_UP, OUTPUT);
+  digitalWrite(RELAY_PIN_UP, LOW);
+  pinMode(RELAY_PIN_DOWN, OUTPUT);
+  digitalWrite(RELAY_PIN_DOWN, LOW);  // actuators off
+
+  // Setup Stepper Motor
+  pinMode(ENA_1, OUTPUT);
+  pinMode(DIR_1, OUTPUT);
+  pinMode(STEP_1, OUTPUT);
+  digitalWrite(ENA_1, LOW);
+  pinMode(LIMIT_SWITCH, INPUT_PULLUP);
+  attachInterrupt(digitalPinToInterrupt(LIMIT_SWITCH), switchInterrupt, FALLING);
+
+  // Setup Servos
+  servos.begin();
+  servos.setPWMFreq(SERVO_FREQ);
+  servos.setPWM(LEFT_SERVO, 0, SERVOMIN);
+  servos.setPWM(RIGHT_SERVO, 0, SERVOMAX);
+
+  // TESTING
+  //turnServos(0x00);
+  //motorStep(0x01);
+  //actuators(0x00);
+  delay(1000);
+  //motorStep(0x00);
+  actuators(0x00);
+  //turnServos(0x01);
+}
 
 void loop() {
-  
-  //Byte Received!
-  if ((SPSR & (1 << SPIF)) != 0)
-  {
-    recv_byte = SPDR;
-  }  
-    Serial.println(recv_byte);
+  if (!start) {
+    start = startLED();
+  }
 
+  if(digitalRead(SHOVEL_UP)) {
+    motorStep(1);
+  } else if (digitalRead(SHOVEL_DOWN)) {
+    motorStep(0);
+  } else if (digitalRead(ARMS_IN)) {
+    turnServos(0);
+  } else if (digitalRead(ARMS_OUT)) {
+    turnServos(1);
+  } else if (digitalRead(ACTUATORS_UP)) {
+    actuators(1);
+  } else if (digitalRea(ACTUATORS_DOWN)) {
+    actuators(0);
+  }
+}
+
+void motorStep(int direction) {
+  if (direction == 0) {  // move down
+    digitalWrite(DIR_1, LOW);
+    while (digitalRead(LIMIT_SWITCH)) {
+      digitalWrite(STEP_1, HIGH);
+      delay(1);
+      digitalWrite(STEP_1, LOW);
+      delay(1);
+    }
+  } else if (direction == 1) {  // move up
+    turnServos(0x01);
+    digitalWrite(DIR_1, HIGH);
+    for (int i = 0; i < 3300; i++) {
+      digitalWrite(STEP_1, HIGH);
+      delay(1);
+      digitalWrite(STEP_1, LOW);
+      delay(1);
+    }
+  }
+}
+
+void actuators(int setting) {
+  if (setting == 0x00) {  // DOWN
+    digitalWrite(RELAY_PIN_UP, HIGH);
+    digitalWrite(RELAY_PIN_DOWN, LOW);
+    delay(10000);
+    digitalWrite(RELAY_PIN_UP, LOW);
+    digitalWrite(RELAY_PIN_DOWN, LOW);
+  } else if (setting == 0x01) {  // UP
+    digitalWrite(RELAY_PIN_UP, LOW);
+    digitalWrite(RELAY_PIN_DOWN, HIGH);
+    delay(10000);
+    digitalWrite(RELAY_PIN_UP, LOW);
+    digitalWrite(RELAY_PIN_DOWN, LOW);
+  } else if (setting == 0x02) {  // OFF
+    digitalWrite(RELAY_PIN_UP, LOW);
+    digitalWrite(RELAY_PIN_DOWN, LOW);
+  }
+}
+
+void turnServos(int direction) {
+  if (direction == 0) {  // IN
+    servos.setPWM(LEFT_SERVO, 0, SERVOMIN);
+    servos.setPWM(RIGHT_SERVO, 0, SERVOMAX);
+  } else if (direction == 1) {  // OUT
+    servos.setPWM(LEFT_SERVO, 0, (SERVOMAX - 200));
+    servos.setPWM(RIGHT_SERVO, 0, (SERVOMIN + 200));
+  }
+}
+
+bool startLED() {
+  bool trigger = false;
+  frontReading = analogRead(PHOTOCELL_F);
+  backReading = analogRead(PHOTOCELL_B);
+  if (backReading - frontReading >= 200) {
+    trigger = true;
+    digitalWrite(TELL_PI, HIGH);
+  }
+  return trigger;
+}
+
+void switchInterrupt() {
+  if (millis() - lastDebounceTime > DEBOUNCE_DELAY) {
+    limitTrigger = true;
+    lastDebounceTime = millis();
+  }
 }
