@@ -154,8 +154,8 @@ class Turtlebot3Full(Node):
 
         self.shovel_speed = 1
 
-        self.actuators_up = [0xAA, 0x03, 0x00]
-        self.actuators_down = [0xAA, 0x03, 0x01]
+        self.actuators_up = [0xAA, 0x03, 0x00] #makes the robot go down so all three wheels are on the ground
+        self.actuators_down = [0xAA, 0x03, 0x01] #makes robot go up tilted
 
         self.actuator_speed = 1
         
@@ -169,6 +169,8 @@ class Turtlebot3Full(Node):
         self.amNavigating = False
 
         self.auto_arms = True
+
+        self.turn_start_theta = self.last_pose_theta
 
         self.get_logger().info("finish init")
         
@@ -219,12 +221,12 @@ class Turtlebot3Full(Node):
         twist.angular.z = 0.0
         self.cmd_vel_pub.publish(twist)
     
+    #GUYS THIS IS ABSOLUTE to start position in square NOT RELATIVE LIKE BACKUP IS
     def start_turn(self, distance_rad: float, speed_mps: float = 0.08) -> None:
         if not self.have_odom:
             self.get_logger().warn('no odom yet, cannot start backup')
             return
-
-        self.turn_start_theta = self.last_pose_theta
+        
         if self.turn_start_theta > 6.3:
             self.turn_start_theta -= 6.28
         elif self.turn_start_theta < 0:
@@ -243,17 +245,17 @@ class Turtlebot3Full(Node):
         self.get_logger().info(f'Starting turn for {distance_rad} rad')
 
     def update_turn(self) -> None:
+        #curr_theta = math.atan2(self.amcl_pose_z, self.amcl_pose_w) * 2.0 #apparently amcl pose doesn't updae while this runs :(
         curr_theta = self.last_pose_theta
-        if curr_theta > 6.3:
+        if curr_theta > 6.28:
             curr_theta -= 6.28
         elif curr_theta < 0:
             curr_theta += 6.28
     
         traveled = curr_theta - self.turn_start_theta
 
-        self.get_logger().info(f'turned {traveled:.3f} rad')
+        self.get_logger().info(f'turned {curr_theta:.3f} - {self.turn_start_theta:.3f} = {traveled:.3f} rad')
 
-        #if traveled > 0: TODO rn we only turn one direction
         if traveled >= self.turn_target - 0.5 and traveled <= self.turn_target + 0.5: #TODO this is janky
             self.stop_robot()
             self.get_logger().info('Turn complete.')
@@ -267,7 +269,7 @@ class Turtlebot3Full(Node):
         twist.linear.x = 0.0
         twist.angular.z = self.turn_curr_speed
         self.cmd_vel_pub.publish(twist)
-        self.get_logger().info(f'current speed: {self.turn_curr_speed:.3f} rad/s')
+        #self.get_logger().info(f'current speed: {self.turn_curr_speed:.3f} rad/s')
 
     def stop_robot(self) -> None:
         self.cmd_vel_pub.publish(Twist())
@@ -280,7 +282,7 @@ class Turtlebot3Full(Node):
 
         self.last_pose_z = msg.pose.pose.orientation.z
         self.last_pose_w = msg.pose.pose.orientation.w
-        self.last_pose_theta = 2.0 * math.atan2(self.last_pose_z, self.last_pose_w)
+        self.last_pose_theta = 2.0 * math.atan2(self.last_pose_z, self.last_pose_w) #range is -2pi to 2pi, increasing counterclockwise
 
         self.have_odom = True
 
@@ -304,13 +306,12 @@ class Turtlebot3Full(Node):
         if self.turning:
             self.update_turn()
             return
-
-        if self.auto_arms:
-            if self.vx < 0:
-                send_spi_command(self.arms_out)
-            elif self.vx > 0:
-                send_spi_command(self.arms_in)
-            
+        
+        # if self.auto_arms:
+        #     if self.vx < 0:
+        #         send_spi_command(self.arms_out)
+        #     elif self.vx > 0:
+        #         send_spi_command(self.arms_in)
 
         if self.step == 0:
             send_spi_command(self.shovel_down)
@@ -321,17 +322,19 @@ class Turtlebot3Full(Node):
         #    self.amSleeping = False
         #    self.send_nav_goal(-0.1050, -0.2244, 0.2020)
         elif self.step == 1:
-            send_spi_command(self.arms_out)
+            #send_spi_command(self.arms_out)
+            #this does almost nothing rn
             self.amSleeping = False
             self.step += 1
         elif self.step == 2:
-            self.start_backup(0.25, -0.15)
+            self.start_backup(0.15, -0.15)
         elif self.step == 3:
-            self.start_turn(-1.7, -0.5) #make the signs match and i think it turns the right direction?
-        elif self.step == 4:
-            self.start_backup(0.57, 0.15)
-        elif self.step == 5:
             send_spi_command(self.arms_in)
+            self.start_turn(-1.6, -0.3) #make the signs match and i think it turns the right direction?
+        elif self.step == 4:
+            self.start_backup(0.50, 0.15) #was 0.57
+        elif self.step == 5:
+            send_spi_command(self.arms_out)
             self.step += 1
         elif self.step == 6:
             self.mySleep(1)
