@@ -7,6 +7,7 @@
 #define RETURN_SHOVEL A4
 #define ARMS_IN A2
 #define ARMS_OUT A5
+#define BUSY A1
 
 // Actuators
 #define RELAY_PIN_UP 9
@@ -36,10 +37,6 @@ int frontReading;
 int backReading;
 bool start = false;
 
-// Debouncing
-#define DEBOUNCE_DELAY 100
-unsigned long lastDebounceTime = 0;
-
 void setup() {
   Serial.begin(115200);
 
@@ -48,6 +45,8 @@ void setup() {
   pinMode(RETURN_SHOVEL, INPUT);
   pinMode(ARMS_IN, INPUT);
   pinMode(ARMS_OUT, INPUT);
+  pinMode(BUSY, OUTPUT);
+  digitalWrite(BUSY, LOW);
 
   // Setup Start LED
   pinMode(PHOTOCELL_F, INPUT);
@@ -67,7 +66,6 @@ void setup() {
   pinMode(STEP_1, OUTPUT);
   digitalWrite(ENA_1, LOW);
   pinMode(LIMIT_SWITCH, INPUT_PULLUP);
-  attachInterrupt(digitalPinToInterrupt(LIMIT_SWITCH), switchInterrupt, FALLING);
 
   // Setup Servos
   servos.begin();
@@ -84,20 +82,27 @@ void loop() {
   }
 
   if (digitalRead(DUMP_SHOVEL)) {
+    digitalWrite(BUSY, HIGH);
     dumpShovel();
+    digitalWrite(BUSY, LOW);
   } else if (digitalRead(RETURN_SHOVEL)) {
+    digitalWrite(BUSY, HIGH);
     returnShovel();
+    digitalWrite(BUSY, LOW);
   } else if (digitalRead(ARMS_IN)) {
+    digitalWrite(BUSY, HIGH);
     turnServos(0);
+    digitalWrite(BUSY, LOW);
   } else if (digitalRead(ARMS_OUT)) {
+    digitalWrite(BUSY, HIGH);
     turnServos(1);
+    digitalWrite(BUSY, LOW);
   }
 }
 
 void dumpShovel() {
   // Open Arms
-  servos.setPWM(LEFT_SERVO, 0, (SERVOMAX - 200));
-  servos.setPWM(RIGHT_SERVO, 0, (SERVOMIN + 200));
+  turnServos(1);
 
   // Raise Shovel
   digitalWrite(DIR_1, HIGH);
@@ -134,8 +139,7 @@ void returnShovel() {
   }
 
   // Close Arms
-  servos.setPWM(LEFT_SERVO, 0, SERVOMIN);
-  servos.setPWM(RIGHT_SERVO, 0, SERVOMAX);
+  turnServos(0);
 }
 
 void turnServos(int direction) {
@@ -157,11 +161,4 @@ bool startLED() {
     digitalWrite(TELL_PI, HIGH);
   }
   return trigger;
-}
-
-void switchInterrupt() {
-  if (millis() - lastDebounceTime > DEBOUNCE_DELAY) {
-    limitTrigger = true;
-    lastDebounceTime = millis();
-  }
 }
