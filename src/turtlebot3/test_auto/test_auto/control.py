@@ -1,10 +1,52 @@
-import spidev
-import time
+from gpiozero import DigitalOutputDevice
+from gpiozero import DigitalInputDevice
+from time import sleep
 
-spi = spidev.SpiDev()
-spi.open(0, 0)             # bus 0, device 0 (CE0)
-spi.max_speed_hz = 100000  # 1 MHz – safe start; can try 2–4 MHz later
-spi.mode = 0                # usually MODE 0 for Arduino slave (CPOL=0, CPHA=0)
+dump_shovel = DigitalOutputDevice(8)
+return_shovel = DigitalOutputDevice(23)
+arms_in = DigitalOutputDevice(25)
+arms_out = DigitalOutputDevice(24)
 
-def send_spi_command(byte_list):
-    spi.writebytes(byte_list)
+busy = DigitalInputDevice(6, pull_up = False)
+
+def dump():
+    dump_shovel.on()
+    if not busy.is_active:
+        dump_shovel.off()
+        return True
+    else:
+        return False
+
+def reset_shovel():
+    return_shovel.on()
+    if not busy.is_active:
+        return_shovel.off()
+        return True
+    else:
+        return False
+
+def arm_in():
+    arms_in.on()
+    if not busy.is_active:
+        arms_in.off()
+        return True
+    else:
+        return False
+    
+def arm_out():
+    arms_out.on()
+    if not busy.is_active:
+        arms_out.off()
+        return True
+    else:
+        return False
+
+
+# # examples
+# dump()
+# sleep(2)
+# reset_shovel()
+# sleep(2)
+# arm_in()
+# sleep(2)
+# arm_out()

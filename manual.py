@@ -1,33 +1,30 @@
 #This is in a strange folder to make it easy to run, just deal w it i guess, good luck knowing where to find it
-from test_auto.control import send_spi_command
+from test_auto.control import dump
+from test_auto.control import reset_shovel
+from test_auto.control import arm_in
+from test_auto.control import arm_out
 
-arms_in = [0xAA, 0x02, 0x00]
-arms_out =  [0xAA,0x02,0x01]
-shovel_up = [0xAA, 0x01, 0x01]
-shovel_down = [0xAA, 0x01, 0x00]
-actuators_up = [0xAA, 0x03, 0x00] #makes the robot go down so all three wheels are on the ground
-actuators_down = [0xAA, 0x03, 0x01] #makes robot go up tilted
 
 print("arms in: ai, arms out: ao, shovel up: su, shovel down: sd, actuators up: au, actuators down: ad")
 while True:
     command = input("Enter command (ai, ao, su, sd, au, ad): ")
     if command == "ai":
-        send_spi_command(arms_in)
-        print(f"Sent:     {arms_in}")
+        arm_in()
+        print(f"Sent: arms in")
     elif command == "ao": 
-        send_spi_command(arms_out)
-        print(f"Sent:     {arms_out}")
+        arm_out()
+        print(f"Sent: arms out")
     elif command == "su":
-        send_spi_command(shovel_up)
-        print(f"Sent:     {shovel_up}")
+        dump()
+        print(f"Sent: shovel up")
     elif command == "sd":
-        send_spi_command(shovel_down)
-        print(f"Sent:     {shovel_down}")
+        reset_shovel()
+        print(f"Sent: shovel down")
     elif command == "au":
-        send_spi_command(actuators_up)
-        print(f"Sent:     {actuators_up}")
+        # send_spi_command(actuators_up)
+        print(f"Sent: actuators up")
     elif command == "ad":
-        send_spi_command(actuators_down)
-        print(f"Sent:     {actuators_down}")
+        # send_spi_command(actuators_down)
+        print(f"Sent: actuators down")
     else:
         print("Invalid command. Please try again.")

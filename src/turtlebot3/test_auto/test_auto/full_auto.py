@@ -16,7 +16,10 @@ from geometry_msgs.msg import PoseWithCovarianceStamped
 from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
 
-from test_auto.control import send_spi_command
+from test_auto.control import dump
+from test_auto.control import reset_shovel
+from test_auto.control import arm_in
+from test_auto.control import arm_out
 
 import subprocess
 
@@ -143,19 +146,6 @@ class Turtlebot3Full(Node):
         self.wait_for_topic("/nav2ext/goal_pose")
 
         self.vx = 0
-
-        self.arms_in = [0xAA, 0x02, 0x00]
-        self.arms_out =  [0xAA,0x02,0x01]
-
-        self.arm_speed = 1
-
-        self.shovel_up = [0xAA, 0x01, 0x01]
-        self.shovel_down = [0xAA, 0x01, 0x00]
-
-        self.shovel_speed = 1
-
-        self.actuators_up = [0xAA, 0x03, 0x00] #makes the robot go down so all three wheels are on the ground
-        self.actuators_down = [0xAA, 0x03, 0x01] #makes robot go up tilted
 
         self.actuator_speed = 1
         
@@ -317,93 +307,89 @@ class Turtlebot3Full(Node):
         #         send_spi_command(self.arms_in)
 
         if self.step == 0:
-            send_spi_command(self.shovel_down)
-            self.get_logger().info('step 0')
-            self.mySleep(1)
-        elif self.step == 1:
             #this does almost nothing rn
             self.get_logger().info('step 1')
             self.amSleeping = False
             self.step += 1
-        elif self.step == 2:
+        elif self.step == 1:
             self.get_logger().info('step 2')
             self.start_backup(0.15, -0.15) #away from wall
-        elif self.step == 3:
+        elif self.step == 2:
             self.get_logger().info('step 3')
-            send_spi_command(self.arms_out)
+            arm_out()
             self.start_turn(-1.6, -0.3) #turn away from cave
-        elif self.step == 4:
+        elif self.step == 3:
             self.get_logger().info('step 4')
             self.start_backup(0.50, 0.15) #was 0.57 #drive to far end
-        elif self.step == 5:
+        elif self.step == 4:
             self.get_logger().info('step 5')
-            send_spi_command(self.arms_in)
+            arm_in()
             self.step += 1
-        elif self.step == 6:
+        elif self.step == 5:
             self.get_logger().info('step 6')
             self.mySleep(1)
-        elif self.step == 7:
+        elif self.step == 6:
             self.get_logger().info('step 7')
             self.amSleeping = False
             self.start_turn(2.0, -0.5) #turn toward cave end/center of field
-        elif self.step == 8:
+        elif self.step == 7:
             self.get_logger().info('step 8')
             self.start_backup(0.67, 0.15) #drive to middle of field (replacing that old intermediate pose)
-        elif self.step == 9:
+        elif self.step == 8:
             self.get_logger().info('step 9')
             self.start_turn(0.75, -0.5) #turn to face container
-        elif self.step == 10:
+        elif self.step == 9:
             self.get_logger().info('step 10')
             self.amSleeping = False
             self.didSleep = False
             self.step += 1 
-        elif self.step == 11:
+        elif self.step == 10:
             self.get_logger().info('step 11')
-            send_spi_command(self.arms_in)
-            self.step += 1
-        elif self.step == 12:
+            if arm_in:
+                step += 1
+        elif self.step == 11:
             self.start_backup(0.54) #this is our old friend to run into the container
-        elif self.step == 13:
+        elif self.step == 12:
             self.didSleep = False
             self.amSleeping = False
             self.step += 1
-        elif self.step == 14:
+        elif self.step == 13:
             self.mySleep(1)
+        elif self.step == 14:
+            self.amSleeping = False
+            if dump():
+                self.step += 1
         elif self.step == 15:
-            self.amSleeping = False
-            send_spi_command(self.shovel_up)
-            self.step += 1
+            self.mySleep(self.shovel_speed)
         elif self.step == 16:
-            self.mySleep(self.shovel_speed)
+            self.amSleeping = False
+            #send_spi_command(self.actuators_down)
+            self.step += 1
         elif self.step == 17:
-            self.amSleeping = False
-            send_spi_command(self.actuators_down)
-            self.step += 1
+            self.mySleep(self.actuator_speed)
         elif self.step == 18:
-            self.mySleep(self.actuator_speed)
+            self.amSleeping = False
+            #send_spi_command(self.actuators_up)
+            self.step += 1
         elif self.step == 19:
-            self.amSleeping = False
-            send_spi_command(self.actuators_up)
-            self.step += 1
-        elif self.step == 20:
             self.mySleep(self.actuator_speed)
-        elif self.step == 21:
+        elif self.step == 20:
             self.amSleeping = False
-            send_spi_command(self.shovel_down)
+            if reset_shovel:
+                self.step += 1
             self.send_new_pos(0.0146, -0.1217, self.last_pose_z, self.last_pose_w) #TODO: better with or without?
-            self.step += 1
-        elif self.step == 22:
+        elif self.step == 21:
             self.mySleep(self.shovel_speed)
-        elif self.step == 23:
+        elif self.step == 22:
             self.start_backup(0.34, -0.08) #TODO i wish this could use amcl, or at least based on the initial_x and initial_y so it forgets all of the slips its done since then?
-        elif self.step == 24:
+        elif self.step == 23:
             self.amSleeping = False
             self.start_turn(1.65, 0.5) #turn to face cave #TODO i wish this could use amcl, or at least based on the initial_x and initial_y so it forgets all of the slips its done since then?
             #if not self.amNavigating:
                 #self.controller_server.set_parameters(Parameter('general_goal_checker.xy_goal_tolerance', Parameter.Type.DOUBLE, 0.1)) #TODO maybe should store the prev ones somewhere
                 #self.controller_server.set_parameters(Parameter('general_goal_checker.yaw_goal_tolerance', Parameter.Type.DOUBLE, 0.05))
                 #self.send_nav_goal(-0.05, 0.1, -3.0) #TODO: better with nav or manual?
-        elif self.step == 25:
+        elif self.step == 24:
             self.start_backup(0.75) #robot becomes in the cave!
 
     def mySleep(self, sleepTime):
