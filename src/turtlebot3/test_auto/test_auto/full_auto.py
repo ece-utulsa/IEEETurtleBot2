@@ -325,9 +325,9 @@ class Turtlebot3Full(Node):
             self.amSleeping = False
             self.step += 1
         elif self.step == 2:
-            self.start_backup(0.25, -0.15)
+            self.start_backup(0.15, -0.15)
         elif self.step == 3:
-            self.start_turn(-1.7, -0.5) #make the signs match and i think it turns the right direction?
+            self.start_turn(-1.7, -0.5) #make the signs match, negative is clockwise
         elif self.step == 4:
             self.start_backup(0.57, 0.15)
         elif self.step == 5:
@@ -337,13 +337,15 @@ class Turtlebot3Full(Node):
             self.mySleep(1)
         elif self.step == 7:
             self.amSleeping = False
+            self.start_turn(-3, -0.5)
             self.step += 1
         elif self.step == 8:
-            #empty rn
+            self.start_backup(0.67, 0.15)
             self.step += 1
         elif self.step == 9:
-            if not self.amNavigating:
-                self.send_nav_goal(-0.2, -0.2, -2.9) #yaw was -1.57
+            self.start_turn(-0.25, -0.5)
+            #if not self.amNavigating:
+                #self.send_nav_goal(-0.2, -0.2, -2.9) #yaw was -1.57
            # if not self.amSleeping:
            #     self.altSleep(5)
            # if self.didSleep:
@@ -351,8 +353,8 @@ class Turtlebot3Full(Node):
         elif self.step == 10:
             self.amSleeping = False
             self.didSleep = False
-            if not self.amNavigating:
-                self.send_nav_goal(0.0, 0.0, 2.9)
+            #if not self.amNavigating:
+            #    self.send_nav_goal(0.0, 0.0, 2.9)
         elif self.step == 11:
             send_spi_command(self.arms_in)
             self.step += 1
@@ -389,7 +391,7 @@ class Turtlebot3Full(Node):
         elif self.step == 21:
             self.amSleeping = False
             send_spi_command(self.shovel_down)
-            self.send_new_pos(0.0146, -0.1217, self.last_pose_z, self.last_pose_w)
+            self.send_new_pos(0.0146, -0.1217, self.last_pose_z, self.last_pose_w) #TODO: better with or without
             self.step += 1
         elif self.step == 22:
             self.mySleep(self.shovel_speed)
@@ -400,7 +402,7 @@ class Turtlebot3Full(Node):
             if not self.amNavigating:
                 #self.controller_server.set_parameters(Parameter('general_goal_checker.xy_goal_tolerance', Parameter.Type.DOUBLE, 0.1)) #TODO maybe should store the prev ones somewhere
                 #self.controller_server.set_parameters(Parameter('general_goal_checker.yaw_goal_tolerance', Parameter.Type.DOUBLE, 0.05))
-                self.send_nav_goal(-0.05, 0.1, -3.0) 
+                self.send_nav_goal(-0.05, 0.1, -3.0) #TODO: better with nav or manual?
 
     def mySleep(self, sleepTime):
         if not self.amSleeping:
