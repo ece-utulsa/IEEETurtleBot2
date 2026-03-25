@@ -3,10 +3,10 @@
 #include <Adafruit_PWMServoDriver.h>
 
 // PI - Arduino Communication
-#define DUMP_SHOVEL A3
-#define RETURN_SHOVEL A4
+#define DUMP_SHOVEL 10
+#define RETURN_SHOVEL 5
 #define ARMS_IN A2
-#define ARMS_OUT A5
+#define ARMS_OUT 6
 #define BUSY A1
 
 // Actuators
@@ -26,8 +26,8 @@ Adafruit_PWMServoDriver servos = Adafruit_PWMServoDriver();
 #define SERVOMIN 110  // about 0 degrees
 #define SERVOMAX 500  // about 180 degrees
 #define SERVO_FREQ 50
-#define LEFT_SERVO 2
-#define RIGHT_SERVO 3
+#define LEFT_SERVO 3
+#define RIGHT_SERVO 2
 
 // Start Light Sensor
 #define PHOTOCELL_F A0
@@ -41,10 +41,10 @@ void setup() {
   Serial.begin(115200);
 
   // Setup Pi - Arduino Communication
-  pinMode(DUMP_SHOVEL, INPUT);
-  pinMode(RETURN_SHOVEL, INPUT);
-  pinMode(ARMS_IN, INPUT);
-  pinMode(ARMS_OUT, INPUT);
+  pinMode(DUMP_SHOVEL, INPUT_PULLUP);
+  pinMode(RETURN_SHOVEL, INPUT_PULLUP);
+  pinMode(ARMS_IN, INPUT_PULLUP);
+  pinMode(ARMS_OUT, INPUT_PULLUP);
   pinMode(BUSY, OUTPUT);
   digitalWrite(BUSY, LOW);
 
@@ -70,10 +70,11 @@ void setup() {
   // Setup Servos
   servos.begin();
   servos.setPWMFreq(SERVO_FREQ);
-  servos.setPWM(LEFT_SERVO, 0, SERVOMIN);
-  servos.setPWM(RIGHT_SERVO, 0, SERVOMAX);
+  servos.setPWM(RIGHT_SERVO, 0, SERVOMIN);
+  servos.setPWM(LEFT_SERVO, 0, SERVOMAX);
 
   // TESTING
+  turnServos(1);
   returnShovel();
 }
 
@@ -82,19 +83,19 @@ void loop() {
     start = startLED();
   }
 
-  if (digitalRead(DUMP_SHOVEL)) {
+  if (!digitalRead(DUMP_SHOVEL)) {
     digitalWrite(BUSY, HIGH);
     dumpShovel();
     digitalWrite(BUSY, LOW);
-  } else if (digitalRead(RETURN_SHOVEL)) {
+  } else if (!digitalRead(RETURN_SHOVEL)) {
     digitalWrite(BUSY, HIGH);
     returnShovel();
     digitalWrite(BUSY, LOW);
-  } else if (digitalRead(ARMS_IN)) {
+  } else if (!digitalRead(ARMS_IN)) {
     digitalWrite(BUSY, HIGH);
     turnServos(0);
     digitalWrite(BUSY, LOW);
-  } else if (digitalRead(ARMS_OUT)) {
+  } else if (!digitalRead(ARMS_OUT)) {
     digitalWrite(BUSY, HIGH);
     turnServos(1);
     digitalWrite(BUSY, LOW);
@@ -104,6 +105,7 @@ void loop() {
 void dumpShovel() {
   // Open Arms
   turnServos(1);
+  delay(500);
 
   // Raise Shovel
   digitalWrite(DIR_1, HIGH);
@@ -113,6 +115,10 @@ void dumpShovel() {
     digitalWrite(STEP_1, LOW);
     delay(1);
   }
+  delay(500);
+
+  // Close Arms
+  turnServos(0);
 
   // Tilt Bucket
   digitalWrite(RELAY_PIN_UP, LOW);
@@ -130,6 +136,10 @@ void returnShovel() {
   digitalWrite(RELAY_PIN_UP, LOW);
   digitalWrite(RELAY_PIN_DOWN, LOW);
 
+  // Open Shovel
+  turnServos(1);
+  delay(500);
+
   //Lower Shovel
   digitalWrite(DIR_1, LOW);
   while (digitalRead(LIMIT_SWITCH)) {
@@ -138,18 +148,18 @@ void returnShovel() {
     digitalWrite(STEP_1, LOW);
     delay(1);
   }
-
+  delay(500);
   // Close Arms
   turnServos(0);
 }
 
 void turnServos(int direction) {
   if (direction == 0) {  // IN
-    servos.setPWM(LEFT_SERVO, 0, SERVOMIN);
-    servos.setPWM(RIGHT_SERVO, 0, SERVOMAX);
+    servos.setPWM(RIGHT_SERVO, 0, SERVOMIN);
+    servos.setPWM(LEFT_SERVO, 0, SERVOMAX);
   } else if (direction == 1) {  // OUT
-    servos.setPWM(LEFT_SERVO, 0, (SERVOMAX - 200));
-    servos.setPWM(RIGHT_SERVO, 0, (SERVOMIN + 200));
+    servos.setPWM(RIGHT_SERVO, 0, (SERVOMAX - 200));
+    servos.setPWM(LEFT_SERVO, 0, (SERVOMIN + 200));
   }
 }
 
