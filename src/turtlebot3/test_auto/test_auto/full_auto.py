@@ -126,7 +126,7 @@ class Turtlebot3Full(Node):
 
         self.wait_for_topic("/scan_filtered")
 
-        p3 = subprocess.Popen(
+        p3 = subprocess.Popen( #TODO would be nice if this only started the nodes we need (commenting out waypoint didn't do anything; i think we only could use amcl)
             ["ros2", "launch", "turtlebot3_navigation2", "navigation2.launch.py", "map:=/home/robotics/desktop_ws/IEEETurtleBot2/src/turtlebot3/newest_map.yaml"],
             cwd="/home/robotics/desktop_ws/",
         )
@@ -171,6 +171,8 @@ class Turtlebot3Full(Node):
         self.auto_arms = True
 
         self.turn_start_theta = self.last_pose_theta
+        self.initial_x = self.last_pose_x
+        self.initial_y = self.last_pose_y
 
         self.get_logger().info("finish init")
         
@@ -245,7 +247,7 @@ class Turtlebot3Full(Node):
         self.get_logger().info(f'Starting turn for {distance_rad} rad')
 
     def update_turn(self) -> None:
-        #curr_theta = math.atan2(self.amcl_pose_z, self.amcl_pose_w) * 2.0 #apparently amcl pose doesn't updae while this runs :(
+        #curr_theta = math.atan2(self.amcl_pose_z, self.amcl_pose_w) * 2.0 #TODO is amcl too slow, or could i use this? would amcl be faster if it wasn't running all those other nodes? or if i changed a number in the yaml?
         curr_theta = self.last_pose_theta
         if curr_theta > 6.28:
             curr_theta -= 6.28
@@ -254,9 +256,9 @@ class Turtlebot3Full(Node):
     
         traveled = curr_theta - self.turn_start_theta
 
-        self.get_logger().info(f'turned {curr_theta:.3f} - {self.turn_start_theta:.3f} = {traveled:.3f} rad')
+        #self.get_logger().info(f'turned {curr_theta:.3f} - {self.turn_start_theta:.3f} = {traveled:.3f} rad')
 
-        if traveled >= self.turn_target - 0.5 and traveled <= self.turn_target + 0.5: #TODO this is janky
+        if traveled >= self.turn_target - 0.25 and traveled <= self.turn_target + 0.25:
             self.stop_robot()
             self.get_logger().info('Turn complete.')
             self.turning = False
@@ -307,6 +309,7 @@ class Turtlebot3Full(Node):
             self.update_turn()
             return
         
+        # want to make sure arms work before we see if this funny logic if correct/necessary
         # if self.auto_arms:
         #     if self.vx < 0:
         #         send_spi_command(self.arms_out)
@@ -317,56 +320,49 @@ class Turtlebot3Full(Node):
             send_spi_command(self.shovel_down)
             self.get_logger().info('step 0')
             self.mySleep(1)
-        #elif self.step == 1:
-        #    self.get_logger().info('step 1')
-        #    self.amSleeping = False
-        #    self.send_nav_goal(-0.1050, -0.2244, 0.2020)
         elif self.step == 1:
-            #send_spi_command(self.arms_out)
             #this does almost nothing rn
+            self.get_logger().info('step 1')
             self.amSleeping = False
             self.step += 1
         elif self.step == 2:
-            self.start_backup(0.15, -0.15)
+            self.get_logger().info('step 2')
+            self.start_backup(0.15, -0.15) #away from wall
         elif self.step == 3:
-            send_spi_command(self.arms_in)
-            self.start_turn(-1.6, -0.3) #make the signs match and i think it turns the right direction?
-        elif self.step == 4:
-            self.start_backup(0.50, 0.15) #was 0.57
-        elif self.step == 5:
+            self.get_logger().info('step 3')
             send_spi_command(self.arms_out)
+            self.start_turn(-1.6, -0.3) #turn away from cave
+        elif self.step == 4:
+            self.get_logger().info('step 4')
+            self.start_backup(0.50, 0.15) #was 0.57 #drive to far end
+        elif self.step == 5:
+            self.get_logger().info('step 5')
+            send_spi_command(self.arms_in)
             self.step += 1
         elif self.step == 6:
+            self.get_logger().info('step 6')
             self.mySleep(1)
         elif self.step == 7:
+            self.get_logger().info('step 7')
             self.amSleeping = False
-            self.start_turn(-3, -0.5)
-            self.step += 1
+            self.start_turn(2.0, -0.5) #turn toward cave end/center of field
         elif self.step == 8:
-            self.start_backup(0.67, 0.15)
-            self.step += 1
+            self.get_logger().info('step 8')
+            self.start_backup(0.67, 0.15) #drive to middle of field (replacing that old intermediate pose)
         elif self.step == 9:
-            self.start_turn(-0.25, -0.5)
-            #if not self.amNavigating:
-                #self.send_nav_goal(-0.2, -0.2, -2.9) #yaw was -1.57
-           # if not self.amSleeping:
-           #     self.altSleep(5)
-           # if self.didSleep:
-           #     send_spi_command(self.arms_out)
+            self.get_logger().info('step 9')
+            self.start_turn(0.75, -0.5) #turn to face container
         elif self.step == 10:
+            self.get_logger().info('step 10')
             self.amSleeping = False
             self.didSleep = False
-            #if not self.amNavigating:
-            #    self.send_nav_goal(0.0, 0.0, 2.9)
+            self.step += 1 
         elif self.step == 11:
+            self.get_logger().info('step 11')
             send_spi_command(self.arms_in)
             self.step += 1
         elif self.step == 12:
-            self.start_backup(0.34)
-           # if not self.amSleeping:      #probably won't do simultaneously. consider.
-           #     self.altSleep(1)
-           # if self.didSleep:
-           #     send_spi_command(self.arms_out)
+            self.start_backup(0.54) #this is our old friend to run into the container
         elif self.step == 13:
             self.didSleep = False
             self.amSleeping = False
@@ -394,18 +390,21 @@ class Turtlebot3Full(Node):
         elif self.step == 21:
             self.amSleeping = False
             send_spi_command(self.shovel_down)
-            self.send_new_pos(0.0146, -0.1217, self.last_pose_z, self.last_pose_w) #TODO: better with or without
+            self.send_new_pos(0.0146, -0.1217, self.last_pose_z, self.last_pose_w) #TODO: better with or without?
             self.step += 1
         elif self.step == 22:
             self.mySleep(self.shovel_speed)
         elif self.step == 23:
-            self.start_backup(0.34, -0.08)
+            self.start_backup(0.34, -0.08) #TODO i wish this could use amcl, or at least based on the initial_x and initial_y so it forgets all of the slips its done since then?
         elif self.step == 24:
             self.amSleeping = False
-            if not self.amNavigating:
+            self.start_turn(1.65, 0.5) #turn to face cave #TODO i wish this could use amcl, or at least based on the initial_x and initial_y so it forgets all of the slips its done since then?
+            #if not self.amNavigating:
                 #self.controller_server.set_parameters(Parameter('general_goal_checker.xy_goal_tolerance', Parameter.Type.DOUBLE, 0.1)) #TODO maybe should store the prev ones somewhere
                 #self.controller_server.set_parameters(Parameter('general_goal_checker.yaw_goal_tolerance', Parameter.Type.DOUBLE, 0.05))
-                self.send_nav_goal(-0.05, 0.1, -3.0) #TODO: better with nav or manual?
+                #self.send_nav_goal(-0.05, 0.1, -3.0) #TODO: better with nav or manual?
+        elif self.step == 25:
+            self.start_backup(0.75) #robot becomes in the cave!
 
     def mySleep(self, sleepTime):
         if not self.amSleeping:
@@ -431,6 +430,8 @@ class Turtlebot3Full(Node):
         z = math.sin(yaw / 2.0)
         w = math.cos(yaw / 2.0)
         return z, w
+    def quarternion_to_yaw(self, z: float, w: float) -> float:
+        return 2.0 * math.atan2(z, w)
     
     def send_new_pos(self, x: float, y: float, z: float, w: float):
         msg = PoseStamped()
