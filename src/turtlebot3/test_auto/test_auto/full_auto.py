@@ -59,14 +59,14 @@ class Turtlebot3Full(Node):
         self.last_pose_x = 0.0
         self.last_pose_y = 0.0
         self.last_pose_theta = 0.0 
-        self.amcl_pose_z = 0.0
-        self.amcl_pose_w = 0.0
+        #self.amcl_pose_z = 0.0
+        #self.amcl_pose_w = 0.0
         self.goal_pose_x = 0.0
         self.goal_pose_y = 0.0
         self.goal_pose_theta = 0.0
 
         self.have_odom = False
-        self.have_amcl = False
+        #self.have_amcl = False
         self.backing_up = False
         self.turning = False
         
@@ -75,7 +75,7 @@ class Turtlebot3Full(Node):
         self.backup_target = 0.0
         self.backup_speed = 0.08
 
-        self.goal_pub = self.create_publisher(
+        '''self.goal_pub = self.create_publisher(
             PoseStamped,
             '/nav2ext/goal_pose',
             10
@@ -92,7 +92,7 @@ class Turtlebot3Full(Node):
             '/nav2ext/goal_done',
             self.goal_done_callback,
             10
-        )
+        )'''
 
         self.cmd_vel_pub = self.create_publisher(Twist, '/cmd_vel', 10)
         self.odom_sub = self.create_subscription(
@@ -118,7 +118,7 @@ class Turtlebot3Full(Node):
         
         self.wait_for_topic("/odom")
 
-        p2 = subprocess.Popen(
+        '''p2 = subprocess.Popen(
             ["ros2", "run", "test_auto", "scan_filter"],
             cwd="/home/robotics/desktop_ws/",
         )
@@ -140,7 +140,7 @@ class Turtlebot3Full(Node):
         )
         self.processes.append(p4)
 
-        self.wait_for_topic("/nav2ext/goal_pose")
+        self.wait_for_topic("/nav2ext/goal_pose")'''
 
         self.vx = 0
 
@@ -149,7 +149,7 @@ class Turtlebot3Full(Node):
         self.altSleep(5)
 
         self.navReady = True
-        self.amclReady = False
+        #self.amclReady = False
 
         self.amSleeping = False
         self.didSleep = False
@@ -158,12 +158,12 @@ class Turtlebot3Full(Node):
 
         self.auto_arms = True
 
-        self.amcl_sub = self.create_subscription(
+        '''self.amcl_sub = self.create_subscription(
             PoseWithCovarianceStamped,
             '/amcl_pose',
             self.amcl_callback,
             10
-        )
+        )'''
 
         self.initial_x = self.last_pose_x
         self.initial_y = self.last_pose_y
@@ -183,8 +183,11 @@ class Turtlebot3Full(Node):
 
 
     def start_backup(self, distance_m: float, speed_mps: float = 0.08) -> None:
-        if not self.have_amcl:
+        '''if not self.have_amcl:
             self.get_logger().warn('no amcl yet, cannot start')
+            return'''
+        if not self.have_odom:
+            self.get_logger().warn('no odom yet, cannot start backup')
             return
 
         self.backup_start_x = self.last_pose_x
@@ -223,10 +226,10 @@ class Turtlebot3Full(Node):
             self.get_logger().warn('no odom yet, cannot start turn')
             return
         
-        if self.turn_start_theta > 6.3:
-            self.turn_start_theta -= 6.28
-        elif self.turn_start_theta < 0:
-            self.turn_start_theta += 6.28
+        # if self.turn_start_theta > 6.3:
+        #     self.turn_start_theta -= 6.28
+        # elif self.turn_start_theta < 0:
+        #     self.turn_start_theta += 6.28
         
         self.turn_target = distance_rad
         if self.turn_target > 6.3:
@@ -241,14 +244,13 @@ class Turtlebot3Full(Node):
         self.get_logger().info(f'Starting turn for {distance_rad} rad')
 
     def update_turn(self) -> None:
-        #curr_theta = self.q_to_yaw(self.amcl_pose_z, self.amcl_pose_w) - self.turn_start_theta #TODO is amcl too slow, or could i use this? would amcl be faster if it wasn't running all those other nodes? or if i changed a number in the yaml?
         curr_theta = self.last_pose_theta 
         if curr_theta > 6.28:
             curr_theta -= 6.28
         elif curr_theta < 0:
             curr_theta += 6.28
 
-        self.get_logger().info(f'turned {curr_theta:.3f}, {self.turn_start_theta:.3f} rad')
+        self.get_logger().info(f'turned {curr_theta:.3f} rad')
 
         if curr_theta >= self.turn_target - 0.1 and curr_theta <= self.turn_target + 0.1:
             self.stop_robot()
@@ -280,23 +282,23 @@ class Turtlebot3Full(Node):
 
         self.have_odom = True
 
-    def amcl_callback(self, msg: Odometry) -> None:
+    '''def amcl_callback(self, msg: Odometry) -> None:
         if not self.amclReady: #this will only run the first time
             self.turn_start_theta = self.q_to_yaw(msg.pose.pose.orientation.z, msg.pose.pose.orientation.w)
             self.get_logger().info(f'turn start theta from z={msg.pose.pose.orientation.z}, w={msg.pose.pose.orientation.w}')
             self.amclReady = True
         self.have_amcl = True #TODO these two are redundant by this point i think, but used in diff places
         self.amcl_pose_w = msg.pose.pose.orientation.w
-        self.amcl_pose_z = msg.pose.pose.orientation.z
+        self.amcl_pose_z = msg.pose.pose.orientation.z'''
 
 
     def update_callback(self):
         if not self.navReady:
             return
 
-        if self.goal_pub.get_subscription_count() <1:
+        '''if self.goal_pub.get_subscription_count() <1:
             self.get_logger().info('Waiting for nav2ext subscriber')
-            return
+            return'''
         
         #if not self.amclReady:
         #    self.get_logger().info('waiting for amcl callback')
@@ -411,7 +413,7 @@ class Turtlebot3Full(Node):
             self.amSleeping = False
             #if shovel_down():
             self.step += 1
-            self.send_new_pos(0.0146, -0.1217, self.last_pose_z, self.last_pose_w) #TODO: better with or without?
+            #self.send_new_pos(0.0146, -0.1217, self.last_pose_z, self.last_pose_w) #TODO: better with or without?
         elif self.step == 22:
             self.get_logger().info(f'step {self.step}')
             #this does nothing rn
@@ -450,26 +452,26 @@ class Turtlebot3Full(Node):
                 self.step += 1
         elif self.step == 31:
             self.get_logger().info(f'step {self.step}')
-            self.start_turn(0.5)
+            self.start_turn(0.45, -0.5)
         elif self.step == 32:
             self.get_logger().info(f'step {self.step}')
-            self.start_backup(0.25)
+            self.start_backup(0.35)
             #TODO:do i need to close the arms here anywhere?
-        # elif self.step == 33:
-        #     self.get_logger().info(f'step {self.step}')
-        #     self.start_turn(3.14)
-        # elif self.step == 34:
-        #     self.get_logger().info(f'step {self.step}')
-        #     self.start_backup(0.5)
-        # elif self.step == 35:
-        #     self.get_logger().info(f'step {self.step}')
-        #     self.start_turn(-0.5)
-        # elif self.step == 36:
-        #     self.get_logger().info(f'step {self.step}')
-        #     self.start_backup(0.25)
-        # elif self.step == 37:
-        #     self.get_logger().info(f'step {self.step}')
-        #     self.start_turn(-1.7)
+        elif self.step == 33:
+            self.get_logger().info(f'step {self.step}')
+            self.start_turn(3.14)
+        elif self.step == 34:
+            self.get_logger().info(f'step {self.step}')
+            self.start_backup(0.5)
+        elif self.step == 35:
+            self.get_logger().info(f'step {self.step}')
+            self.start_turn(-0.5)
+        elif self.step == 36:
+            self.get_logger().info(f'step {self.step}')
+            self.start_backup(0.25)
+        elif self.step == 37:
+            self.get_logger().info(f'step {self.step}')
+            self.start_turn(-1.7, -0.5)
         
 
     def mySleep(self, sleepTime):
