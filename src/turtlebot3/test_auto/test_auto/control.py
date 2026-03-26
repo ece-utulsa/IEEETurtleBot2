@@ -1,52 +1,62 @@
-from gpiozero import DigitalOutputDevice
-from gpiozero import DigitalInputDevice
-from time import sleep
+from gpiozero import LED, Button
+import time
 
-return_shovel = DigitalOutputDevice(23)
-arms_in = DigitalOutputDevice(25)
-arms_out = DigitalOutputDevice(24)
-dump_shovel = DigitalOutputDevice(6)
+#shovel  = LED(11)
+#acc = LED(23)
+arms = LED(25)
 
-#busy = DigitalInputDevice(6, pull_up = False)
+shovel_time = 10
+arms_time = 2
+acc_time = 10
 
-def dump():
-    dump_shovel.on()
+def shovel_down():
+    shovel.on()
     # if not busy.is_activ:
     #     dump_shovel.off()
     #     return True
     # else:
     #     return False
-    sleep(5)
+    time.sleep(shovel_time)
     return True
 
-def reset_shovel():
-    return_shovel.on()
+def shovel_up():
+    shovel.off()
     # if not busy.is_active:
     #     return_shovel.off()
     #     return True
     # else:
     #     return False
-    sleep(5)
+    time.sleep(shovel_time)
     return True
 
 def arm_in():
-    arms_in.on()
+    arms.on()
     # if not busy.is_active:
     #     arms_in.off()
     #     return True
     # else:
     #     return False
-    sleep(1)
+    time.sleep(arms_time)
     return True
     
 def arm_out():
-    arms_out.on()
+    arms.off()
     # if not busy.is_active:
     #     arms_out.off()
     #     return True
     # else:
     #     return False
-    sleep(1)
+    time.sleep(arms_time)
+    return True
+
+def acc_in():
+    acc.on()
+    time.sleep(acc_time)
+    return True
+
+def acc_out():
+    acc.off()
+    time.sleep(acc_time)
     return True
 
 

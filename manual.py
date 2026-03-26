@@ -1,13 +1,15 @@
 #This is in a strange folder to make it easy to run, just deal w it i guess, good luck knowing where to find it
-from test_auto.control import dump
-from test_auto.control import reset_shovel
+from test_auto.control import shovel_up
+from test_auto.control import shovel_down
 from test_auto.control import arm_in
 from test_auto.control import arm_out
+from test_auto.control import acc_in
+from test_auto.control import acc_out
 
 
-print("arms in: ai, arms out: ao, shovel up: su, shovel down: sd, actuators up: au, actuators down: ad")
+print("arms in: ai, arms out: ao, shovel up: su, shovel down: sd, actuators in: aci, actuators out: aco")
 while True:
-    command = input("Enter command (ai, ao, su, sd, au, ad): ")
+    command = input("(4) Enter (ai, ao, su, sd, aci, aco): ")
     if command == "ai":
         arm_in()
         print(f"Sent: arms in")
@@ -15,16 +17,16 @@ while True:
         arm_out()
         print(f"Sent: arms out")
     elif command == "su":
-        dump()
+        shovel_up()
         print(f"Sent: shovel up")
     elif command == "sd":
-        reset_shovel()
+        shovel_down()
         print(f"Sent: shovel down")
-    elif command == "au":
-        # send_spi_command(actuators_up)
-        print(f"Sent: actuators up")
-    elif command == "ad":
-        # send_spi_command(actuators_down)
-        print(f"Sent: actuators down")
+    elif command == "aci":
+        acc_in()
+        print(f"Sent: actuators in")
+    elif command == "aco":
+        acc_out()
+        print(f"Sent: actuators out")
     else:
         print("Invalid command. Please try again.")
