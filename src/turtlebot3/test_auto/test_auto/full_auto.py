@@ -90,13 +90,6 @@ class Turtlebot3Full(Node):
             10
         )
 
-        self.amcl_sub = self.create_subscription(
-            PoseWithCovarianceStamped,
-            '/amcl',
-            self.amcl_callback,
-            10
-        )
-
         self.cmd_vel_pub = self.create_publisher(Twist, '/cmd_vel', 10)
         self.odom_sub = self.create_subscription(
             Odometry,
@@ -159,6 +152,13 @@ class Turtlebot3Full(Node):
         self.amNavigating = False
 
         self.auto_arms = True
+
+        self.amcl_sub = self.create_subscription(
+            PoseWithCovarianceStamped,
+            '/amcl',
+            self.amcl_callback,
+            10
+        )
 
         self.turn_start_theta = self.last_pose_theta
         self.initial_x = self.last_pose_x
@@ -290,7 +290,7 @@ class Turtlebot3Full(Node):
         if self.goal_pub.get_subscription_count() <1:
             self.get_logger().info('Waiting for nav2ext subscriber')
             return
-
+        
         if self.backing_up:
             self.update_backup()
             return
@@ -345,7 +345,7 @@ class Turtlebot3Full(Node):
             self.step += 1 
         elif self.step == 10:
             self.get_logger().info('step 11')
-            if arm_in:
+            if arm_in():
                 step += 1
         elif self.step == 11:
             self.start_backup(0.54) #this is our old friend to run into the container
