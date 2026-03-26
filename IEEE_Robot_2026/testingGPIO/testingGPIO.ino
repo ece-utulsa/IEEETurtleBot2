@@ -3,11 +3,11 @@
 #include <Adafruit_PWMServoDriver.h>
 
 // PI - Arduino Communication
-#define DUMP_SHOVEL 10
+#define DUMP_SHOVEL A1 // Change back to 10 when add BUSY
 #define RETURN_SHOVEL 5
 #define ARMS_IN A2
 #define ARMS_OUT 6
-#define BUSY A1
+//#define BUSY A1
 
 // Actuators
 #define RELAY_PIN_UP 9
@@ -45,8 +45,8 @@ void setup() {
   pinMode(RETURN_SHOVEL, INPUT_PULLUP);
   pinMode(ARMS_IN, INPUT_PULLUP);
   pinMode(ARMS_OUT, INPUT_PULLUP);
-  pinMode(BUSY, OUTPUT);
-  digitalWrite(BUSY, LOW);
+  //pinMode(BUSY, OUTPUT);
+  //digitalWrite(BUSY, LOW);
 
   // Setup Start LED
   pinMode(PHOTOCELL_F, INPUT);
@@ -74,7 +74,7 @@ void setup() {
   servos.setPWM(LEFT_SERVO, 0, SERVOMAX);
 
   // TESTING
-  turnServos(1);
+  turnServos(0);
   returnShovel();
 }
 
@@ -84,21 +84,21 @@ void loop() {
   }
 
   if (!digitalRead(DUMP_SHOVEL)) {
-    digitalWrite(BUSY, HIGH);
+    //digitalWrite(BUSY, HIGH);
     dumpShovel();
-    digitalWrite(BUSY, LOW);
+    //digitalWrite(BUSY, LOW);
   } else if (!digitalRead(RETURN_SHOVEL)) {
-    digitalWrite(BUSY, HIGH);
+    //digitalWrite(BUSY, HIGH);
     returnShovel();
-    digitalWrite(BUSY, LOW);
-  } else if (!digitalRead(ARMS_IN)) {
-    digitalWrite(BUSY, HIGH);
+    //digitalWrite(BUSY, LOW);
+  } else if (digitalRead(ARMS_IN)) {
+    //digitalWrite(BUSY, HIGH);
     turnServos(0);
-    digitalWrite(BUSY, LOW);
-  } else if (!digitalRead(ARMS_OUT)) {
-    digitalWrite(BUSY, HIGH);
+    //digitalWrite(BUSY, LOW);
+  } else if (!digitalRead(ARMS_IN)) {
+    //digitalWrite(BUSY, HIGH);
     turnServos(1);
-    digitalWrite(BUSY, LOW);
+    //digitalWrite(BUSY, LOW);
   }
 }
 
