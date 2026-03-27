@@ -250,7 +250,7 @@ class Turtlebot3Full(Node):
         elif curr_theta < 0:
             curr_theta += 6.28
 
-        self.get_logger().info(f'turned {curr_theta:.3f} rad')
+        #self.get_logger().info(f'turned {curr_theta:.3f} rad')
 
         if curr_theta >= self.turn_target - 0.1 and curr_theta <= self.turn_target + 0.1:
             self.stop_robot()
@@ -321,7 +321,7 @@ class Turtlebot3Full(Node):
 
         if self.step == 0:
             #this does almost nothing rn
-            self.get_logger().info(f'step {self.step}')
+            #self.get_logger().info(f'step {self.step}')
             self.amSleeping = False
             self.step += 1
         elif self.step == 1:
@@ -329,15 +329,15 @@ class Turtlebot3Full(Node):
             self.start_backup(0.15, -0.15) #away from wall
         elif self.step == 2:
             self.get_logger().info(f'step {self.step}')
-            arm_out()
+            #arm_out()
             self.start_turn(-1.6, -0.3) #turn away from cave
         elif self.step == 3:
             self.get_logger().info(f'step {self.step}')
-            self.start_backup(0.50, 0.15) #was 0.57 #drive to far end
+            self.start_backup(0.45, 0.15) #was 0.57 #drive to far end
         elif self.step == 4:
             self.get_logger().info(f'step {self.step}')
-            if arm_in():
-                self.step += 1
+            #if arm_in():
+            self.step += 1
         elif self.step == 5:
             self.get_logger().info(f'step {self.step}')
             #this does nothing rn
@@ -345,11 +345,11 @@ class Turtlebot3Full(Node):
         elif self.step == 6:
             self.get_logger().info(f'step {self.step}')
             self.amSleeping = False
-            arm_out() 
+            #arm_out() 
             self.start_turn(2.0, -0.5) #turn toward cave end/center of field
         elif self.step == 7:
             self.get_logger().info(f'step {self.step}')
-            self.start_backup(0.67, 0.15) #drive to middle of field (replacing that old intermediate pose)
+            self.start_backup(0.62, 0.15) #drive to middle of field (replacing that old intermediate pose)
         elif self.step == 8:
             self.get_logger().info(f'step {self.step}')
             self.start_turn(0.75, -0.5) #turn to face container
@@ -361,12 +361,12 @@ class Turtlebot3Full(Node):
             self.step += 1 
         elif self.step == 10:
             self.get_logger().info(f'step {self.step}')
-            if arm_in():
-                self.step += 1
+            #if arm_in():
+            self.step += 1
         elif self.step == 11:
             self.get_logger().info(f'step {self.step}')
-            if arm_out():
-                self.step += 1
+            #if arm_out():
+            self.step += 1
         elif self.step == 12:
             self.get_logger().info(f'step {self.step}')
             self.start_backup(0.2) #second half of backup, after arms in and out
@@ -434,10 +434,10 @@ class Turtlebot3Full(Node):
             self.start_backup(0.75, 0.15) #robot becomes in the cave!
         elif self.step == 26:
             self.get_logger().info(f'step {self.step}')
-            if arm_in():
-                self.step += 1
+            #if arm_in():
+            self.step += 1
         elif self.step == 27:
-            self.start_backup(0.75)#run into the wall
+            self.start_backup(0.75) #run into the wall
         
         elif self.step == 28:
             self.get_logger().info(f'step {self.step}')
@@ -448,8 +448,8 @@ class Turtlebot3Full(Node):
             self.start_backup(0.35, -0.08)
         elif self.step == 30:
             self.get_logger().info(f'step {self.step}')
-            if arm_out():
-                self.step += 1
+            #if arm_out():
+            self.step += 1
         elif self.step == 31:
             self.get_logger().info(f'step {self.step}')
             self.start_turn(0.45, -0.5)
@@ -462,7 +462,7 @@ class Turtlebot3Full(Node):
             self.start_turn(3.14)
         elif self.step == 34:
             self.get_logger().info(f'step {self.step}')
-            self.start_backup(0.5)
+            self.start_backup(0.75)
         elif self.step == 35:
             self.get_logger().info(f'step {self.step}')
             self.start_turn(-0.5)
@@ -471,7 +471,13 @@ class Turtlebot3Full(Node):
             self.start_backup(0.25)
         elif self.step == 37:
             self.get_logger().info(f'step {self.step}')
-            self.start_turn(-1.7, -0.5)
+            self.start_turn(-1.75, -0.5)
+        elif self.step == 38:
+            self.start_backup(0.5)
+        elif self.step == 39:
+            self.start_turn(0.5)
+        elif self.step == 40:
+            self.start_backup(0.34) #our lucky number, lets go drop some more 
         
 
     def mySleep(self, sleepTime):
@@ -588,8 +594,8 @@ def main(args=None):
         node.destroy_node()
         rclpy.shutdown()
     
-    if node.step > 32:
-        finish_callback()
+    # if node.step > 32:
+    #     finish_callback()
 
     with SigintSkipper(finish_callback):
         rclpy.spin(node)
