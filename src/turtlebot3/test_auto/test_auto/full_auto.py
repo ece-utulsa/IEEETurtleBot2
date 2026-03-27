@@ -81,7 +81,7 @@ class Turtlebot3Full(Node):
 
         self.shovel_time = 10.1
         self.arms_time = 1.1
-        self.acc_time = 10.1
+        self.tilt_time = 10.1
 
         '''self.goal_pub = self.create_publisher(
             PoseStamped,
@@ -328,6 +328,7 @@ class Turtlebot3Full(Node):
         #         send_spi_command(self.arms_in)
 
         if self.step == 0:
+            self.get_logger().info(f'step {self.step}')
             #this does almost nothing rn
             #self.get_logger().info(f'step {self.step}')
             self.amSleeping = False
@@ -344,8 +345,8 @@ class Turtlebot3Full(Node):
             self.start_backup(0.45, 0.15) #was 0.57 #drive to far end
         elif self.step == 4:
             self.get_logger().info(f'step {self.step}')
-            #if arm_in():
-            self.step += 1
+            self.arm_in()
+            self.mySleep(self.arms_time)
         elif self.step == 5:
             self.get_logger().info(f'step {self.step}')
             #this does nothing rn
@@ -353,7 +354,7 @@ class Turtlebot3Full(Node):
         elif self.step == 6:
             self.get_logger().info(f'step {self.step}')
             self.amSleeping = False
-            #arm_out() 
+            self.arm_out() 
             self.start_turn(2.0, -0.5) #turn toward cave end/center of field
         elif self.step == 7:
             self.get_logger().info(f'step {self.step}')
@@ -369,122 +370,120 @@ class Turtlebot3Full(Node):
             self.step += 1 
         elif self.step == 10:
             self.get_logger().info(f'step {self.step}')
-            #if arm_in():
+            self.arm_in()
             self.step += 1
         elif self.step == 11:
             self.get_logger().info(f'step {self.step}')
-            #if arm_out():
-            self.step += 1
+            self.mySleep(self.arms_time)
         elif self.step == 12:
             self.get_logger().info(f'step {self.step}')
-            self.start_backup(0.2) #second half of backup, after arms in and out
-        elif self.step == 13:
-            #this does almost nothing rn
-            self.get_logger().info(f'step {self.step}')
-            self.didSleep = False
             self.amSleeping = False
+            self.shovel_up()
             self.step += 1
+        elif self.step == 13:
+            self.mySleep(self.shovel_time)
         elif self.step == 14:
             self.get_logger().info(f'step {self.step}')
-            #self.mySleep(1)
-            #this does nothing rn
-            self.step += 1
+            self.amSleeping = False
+            self.start_backup(0.2) #second half of backup, after arms in and shovel up
         elif self.step == 15:
             self.get_logger().info(f'step {self.step}')
-            self.amSleeping = False
-            #if shovel_up():
+            #this does nothing rn
             self.step += 1
         elif self.step == 16:
             self.get_logger().info(f'step {self.step}')
-            #if acc_out():
+            self.tilt()
             self.step += 1
         elif self.step == 17:
             self.get_logger().info(f'step {self.step}')
-            self.amSleeping = False
-            #this does almost nothing rn, should we sleep?
-            self.step += 1
+            self.mySleep(self.tilt_time)
         elif self.step == 18:
+            self.amSleeping = False
             self.get_logger().info(f'step {self.step}')
-            #if acc_in():
+            self.untilt()
             self.step += 1
         elif self.step == 19:
             self.get_logger().info(f'step {self.step}')
-            self.amSleeping = False
-            #this does almost nothing rn
-            self.step += 1
+            self.mySleep(self.tilt_time)
         elif self.step == 20:
             self.get_logger().info(f'step {self.step}')
-            #this does nothing rn
+            self.amSleeping = False
+            self.start_backup(0.34, -0.08) #TODO i wish this could use amcl, or at least based on the initial_x and initial_y so it forgets all of the slips its done since then?
             self.step += 1
         elif self.step == 21:
             self.get_logger().info(f'step {self.step}')
-            self.amSleeping = False
-            #if shovel_down():
+            self.arm_out()
             self.step += 1
             #self.send_new_pos(0.0146, -0.1217, self.last_pose_z, self.last_pose_w) #TODO: better with or without?
         elif self.step == 22:
             self.get_logger().info(f'step {self.step}')
-            #this does nothing rn
-            self.step += 1
+            self.mySleep(self.arms_time)
         elif self.step == 23:
             self.get_logger().info(f'step {self.step}')
-            self.start_backup(0.34, -0.08) #TODO i wish this could use amcl, or at least based on the initial_x and initial_y so it forgets all of the slips its done since then?
+            self.amSleeping = False
+            self.shovel_down()
         elif self.step == 24:
+            self.get_logger().info(f'step {self.step}')
+            self.mySleep(self.shovel_time)
+        elif self.step == 25:
             self.get_logger().info(f'step {self.step}')
             self.amSleeping = False
             self.start_turn(1.75) #turn to face cave
-            #if not self.amNavigating:
-                #self.controller_server.set_parameters(Parameter('general_goal_checker.xy_goal_tolerance', Parameter.Type.DOUBLE, 0.1)) #TODO maybe should store the prev ones somewhere
-                #self.controller_server.set_parameters(Parameter('general_goal_checker.yaw_goal_tolerance', Parameter.Type.DOUBLE, 0.05))
-                #self.send_nav_goal(-0.05, 0.1, -3.0) #TODO: better with nav or manual?
-        elif self.step == 25:
-            self.get_logger().info(f'step {self.step}')
-            self.start_backup(0.75, 0.15) #robot becomes in the cave!
         elif self.step == 26:
             self.get_logger().info(f'step {self.step}')
-            #if arm_in():
-            self.step += 1
+            self.start_backup(0.75, 0.15) #robot becomes in the cave!
         elif self.step == 27:
-            self.start_backup(0.75) #run into the wall
-        
+            self.get_logger().info(f'step {self.step}')
+            self.arm_in()
+            self.step += 1
         elif self.step == 28:
             self.get_logger().info(f'step {self.step}')
-            #self.send_new_pos() #TODO: if we want to reset anything
-            self.step += 1
+            self.mySleep(self.arms_time)
         elif self.step == 29:
+            self.amSleeping = False
             self.get_logger().info(f'step {self.step}')
-            self.start_backup(0.35, -0.08)
+            self.start_backup(0.75) #run into the wall
         elif self.step == 30:
             self.get_logger().info(f'step {self.step}')
-            #if arm_out():
-            self.step += 1
+            self.start_backup(0.35, -0.08)
         elif self.step == 31:
             self.get_logger().info(f'step {self.step}')
-            self.start_turn(0.45, -0.5)
+            self.arm_out()
+            self.step += 1
         elif self.step == 32:
+            self.get_logger().info(f'step {self.step}')
+            self.mySleep(self.arms_time)
+        elif self.step == 33:
+            self.amSleeping = False
+            self.get_logger().info(f'step {self.step}')
+            self.start_turn(0.45, -0.5)
+        elif self.step == 34:
             self.get_logger().info(f'step {self.step}')
             self.start_backup(0.35)
             #TODO:do i need to close the arms here anywhere?
-        elif self.step == 33:
-            self.get_logger().info(f'step {self.step}')
-            self.start_turn(3.14)
-        elif self.step == 34:
-            self.get_logger().info(f'step {self.step}')
-            self.start_backup(0.75)
         elif self.step == 35:
             self.get_logger().info(f'step {self.step}')
-            self.start_turn(-0.5)
+            self.start_turn(3.14)
         elif self.step == 36:
             self.get_logger().info(f'step {self.step}')
-            self.start_backup(0.25)
+            self.start_backup(0.75)
         elif self.step == 37:
             self.get_logger().info(f'step {self.step}')
-            self.start_turn(-1.75, -0.5)
+            self.start_turn(-0.5)
         elif self.step == 38:
-            self.start_backup(0.5)
+            self.get_logger().info(f'step {self.step}')
+            self.start_backup(0.25)
         elif self.step == 39:
-            self.start_turn(0.5)
+            self.get_logger().info(f'step {self.step}')
+            self.start_turn(-1.75, -0.5)
         elif self.step == 40:
+            self.get_logger().info(f'step {self.step}')
+            self.start_backup(0.5)
+        elif self.step == 41:
+            self.get_logger().info(f'step {self.step}')
+            self.start_turn(0.5)
+        elif self.step == 42:
+            self.get_logger().info(f'step {self.step}')
             self.start_backup(0.34) #our lucky number, lets go drop some more 
         
 
