@@ -367,7 +367,6 @@ class Turtlebot3Full(Node):
             self.amSleeping = False
             self.didSleep = False
             self.start_backup(0.34) #this is our old friend to run into the container
-            self.step += 1 
         elif self.step == 10:
             self.get_logger().info(f'step {self.step}')
             self.arm_in()
@@ -409,7 +408,6 @@ class Turtlebot3Full(Node):
             self.get_logger().info(f'step {self.step}')
             self.amSleeping = False
             self.start_backup(0.34, -0.08) #TODO i wish this could use amcl, or at least based on the initial_x and initial_y so it forgets all of the slips its done since then?
-            self.step += 1
         elif self.step == 21:
             self.get_logger().info(f'step {self.step}')
             self.arm_out()
@@ -422,6 +420,7 @@ class Turtlebot3Full(Node):
             self.get_logger().info(f'step {self.step}')
             self.amSleeping = False
             self.shovel_down()
+            self.step += 1
         elif self.step == 24:
             self.get_logger().info(f'step {self.step}')
             self.mySleep(self.shovel_time)
