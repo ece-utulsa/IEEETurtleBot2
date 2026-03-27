@@ -1,4 +1,4 @@
-from giozero import LED, Button
+from gpiozero import LED, Button
 import time
 
 # set pins
@@ -6,24 +6,41 @@ shovel = LED(11)
 acc = LED(23)
 arms = LED(25)
 
-# dump bucket
+# homing
+acc.on()
+#time.sleep(10.1)
+arms.on()
+print("1 done")
+#time.sleep(1.1)
+shovel.on()
+#time.sleep(10.1)
+
+#dump bucket
 arms.off()
-time.sleep(1.1)
+print("arms out")
+time.sleep(5.1)
 shovel.off()
+print("shovel up")
 time.sleep(10.1)
 arms.on()
+print("arms in")
 time.sleep(1.1)
-acc.on()
+acc.off()
+print("tilt")
 time.sleep(10.1)
 
 input("continue")
 print(f"continuing")
 
-acc.off()
+acc.on()
+print("untilt")
 time.sleep(10.1)
 arms.off()
+print("arms out")
 time.sleep(1.1)
 shovel.on()
+print("shovel down")
 time.sleep(10.1)
 arms.on()
+print("arms in")
 time.sleep(1.1)

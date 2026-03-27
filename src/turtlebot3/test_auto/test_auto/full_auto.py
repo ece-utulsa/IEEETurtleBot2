@@ -17,12 +17,6 @@ from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
 
 from gpiozero import LED, Button
-from test_auto.control import shovel_up
-from test_auto.control import shovel_down
-from test_auto.control import arm_in
-from test_auto.control import arm_out
-from test_auto.control import acc_in
-from test_auto.control import acc_out
 
 import subprocess
 
@@ -50,6 +44,16 @@ class SigintSkipper:
 
 class Turtlebot3Full(Node):
     def __init__(self):
+        #arduino
+        # set pins
+        self.shovel = LED(11)
+        self.acc = LED(23)
+        self.arms = LED(25)
+        # homing
+        self.acc.on()
+        self.arms.on()
+        self.shovel.on()
+
         super().__init__('turtlebot3_full')
 
         self.step = 0
@@ -74,6 +78,10 @@ class Turtlebot3Full(Node):
         self.backup_start_y = 0.0
         self.backup_target = 0.0
         self.backup_speed = 0.08
+
+        self.shovel_time = 10.1
+        self.arms_time = 1.1
+        self.acc_time = 10.1
 
         '''self.goal_pub = self.create_publisher(
             PoseStamped,
@@ -329,7 +337,7 @@ class Turtlebot3Full(Node):
             self.start_backup(0.15, -0.15) #away from wall
         elif self.step == 2:
             self.get_logger().info(f'step {self.step}')
-            #arm_out()
+            self.arm_out()
             self.start_turn(-1.6, -0.3) #turn away from cave
         elif self.step == 3:
             self.get_logger().info(f'step {self.step}')
@@ -582,8 +590,36 @@ class Turtlebot3Full(Node):
                 p.wait(timeout=3)
             except subprocess.TimeoutExpired:
                 p.kill()
-        
 
+    def shovel_down(self):
+        self.shovel.on()
+        #time.sleep(shovel_time)
+        return True
+
+    def shovel_up(self):
+        self.shovel.off()
+        #time.sleep(shovel_time)
+        return True
+
+    def arm_in(self):
+        self.arms.on()
+        #time.sleep(arms_time)
+        return True
+        
+    def arm_out(self):
+        self.arms.off()
+        #time.sleep(arms_time)
+        return True
+
+    def tilt(self):
+        self.acc.off()
+        #time.sleep(acc_time)
+        return True
+
+    def untilt(self):
+        self.acc.on()
+        #time.sleep(acc_time)
+        return True
 
 def main(args=None):
     rclpy.init(args=args)

@@ -3,30 +3,31 @@ from test_auto.control import shovel_up
 from test_auto.control import shovel_down
 from test_auto.control import arm_in
 from test_auto.control import arm_out
-from test_auto.control import acc_in
-from test_auto.control import acc_out
+from test_auto.control import tilt
+from test_auto.control import untilt
+from test_auto.control import init
 
-
-print("arms in: ai, arms out: ao, shovel up: su, shovel down: sd, actuators in: aci, actuators out: aco")
+init()
+print("arms in: ai, arms out: ao, shovel up: su, shovel down: sd, tilt: t, untilt: ut")
 while True:
-    command = input("(4) Enter (ai, ao, su, sd, aci, aco): ")
+    command = input("(v7) Enter (ai, ao, su, sd, t, ut): ")
     if command == "ai":
         arm_in()
         print(f"Sent: arms in")
     elif command == "ao": 
         arm_out()
         print(f"Sent: arms out")
-    elif command == "su":
+    elif command == "su": 
         shovel_up()
         print(f"Sent: shovel up")
     elif command == "sd":
         shovel_down()
         print(f"Sent: shovel down")
-    elif command == "aci":
-        acc_in()
-        print(f"Sent: actuators in")
-    elif command == "aco":
-        acc_out()
-        print(f"Sent: actuators out")
+    elif command == "t":
+        tilt()
+        print(f"Sent: tilt")
+    elif command == "ut":
+        untilt()
+        print(f"Sent: untilt")
     else:
         print("Invalid command. Please try again.")
