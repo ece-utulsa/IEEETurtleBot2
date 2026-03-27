@@ -20,7 +20,7 @@ bool busy = false;
 // Actuators
 #define RELAY_PIN_UP 9
 #define RELAY_PIN_DOWN 8
-bool actuatorsUp;
+bool tilt = true;
 
 //Stepper Motors
 #define ENA_1 7
@@ -87,68 +87,53 @@ void setup() {
 
   // HOMING
   actuators(ACC_LEVEL);
-  turnServos(SERVOS_OUT);
-  shovel(SHOVEL_DOWN);
-  turnServos(SERVOS_IN);
+  //turnServos(SERVOS_OUT);
+  //shovel(SHOVEL_DOWN);
+  //turnServos(SERVOS_IN);
 
   // DUMP CYCLE
-  turnServos(SERVOS_OUT);
-  shovel(SHOVEL_UP);
-  turnServos(SERVOS_IN);
-  actuators(ACC_TILT);
-  delay(2000);
+  // turnServos(SERVOS_OUT);
+  // shovel(SHOVEL_UP);
+  // turnServos(SERVOS_IN);
+  // actuators(ACC_TILT);
+  // delay(2000);
 
-  actuators(ACC_LEVEL);
-  turnServos(SERVOS_OUT);
-  shovel(SHOVEL_DOWN);
-  turnServos(SERVOS_IN);
+  // actuators(ACC_LEVEL);
+  // turnServos(SERVOS_OUT);
+  // shovel(SHOVEL_DOWN);
+  // turnServos(SERVOS_IN);
 }
 
 void loop() {
-  // TESTING
-  // Serial.print(digitalRead(SHOVEL));
-  // Serial.print(" , ");
-  // Serial.print(digitalRead(ACTUATORS));
-  // Serial.print(" , ");
-  // Serial.print(digitalRead(ARMS));
-  // Serial.print(" , ");
-  // Serial.println(digitalRead(START));
-
-  // // if (!start) {
-  // //   start = startLED();
-  // // }
-  // if (!busy) {
-  //   Serial.println(1);
-  //   if (!digitalRead(SHOVEL)) {
-  //     Serial.println(2);
-  //     if (!servosIn) {
-  //       Serial.println(3);
-  //       shovel(SHOVEL_UP);  // UP
-  //     }
-  //   } else {
-  //     Serial.println(4);
-  //     if (!servosIn) {
-  //       Serial.println(5);
-  //       shovel(SHOVEL_DOWN);  // DOWN
-  //     }
-  //   }
-  //   if (!digitalRead(ACTUATORS)) {
-  //     Serial.println("Actuators down");
-  //     if (servosIn) {
-  //       actuators(ACC_TILT);  // DOWN
-  //     }
-
-  //   } else {
-  //     actuators(ACC_LEVEL);  // UP
-  //   }
-  //   if (digitalRead(ARMS)) {
-  //     Serial.println("Arms");
-  //     turnServos(SERVOS_IN);
-  //   } else {
-  //     Serial.println("Other arms");
-  //     turnServos(SERVOS_OUT);
-  //   }
-  // }
+  if (!start) {
+    start = startLED();
+  }
+  if (!busy) {
+    if (!digitalRead(SHOVEL)) {
+      if (!servosIn) {
+        shovel(SHOVEL_UP);  // UP
+      }
+    } else {
+      if (!servosIn) {
+        shovel(SHOVEL_DOWN);  // DOWN
+      }
+    }
+    if (!digitalRead(ACTUATORS)) {
+      Serial.println("Actuators down");
+      if (servosIn) {
+        actuators(ACC_TILT);  // DOWN
+      }
+    } else {
+      actuators(ACC_LEVEL);  // UP
+    }
+    if (digitalRead(ARMS)) {
+      Serial.println("Arms");
+      turnServos(SERVOS_IN);
+    } else {
+      Serial.println("Other arms");
+      turnServos(SERVOS_OUT);
+    }
+  }
 }
 
 void shovel(int direction) {
@@ -183,17 +168,23 @@ void shovel(int direction) {
 }
 
 void actuators(int setting) {
+  if (setting == 0x00 && tilt) {
+    return;
+  }
+  if (setting == 0x01 && !tilt) {
+    return;
+  }
   digitalWrite(BUSY, HIGH);
   busy = true;
   if (setting == 0x00) {  // TILT
-    actuatorsUp = false;
+    tilt = true;
     digitalWrite(RELAY_PIN_UP, HIGH);
     digitalWrite(RELAY_PIN_DOWN, LOW);
     delay(10000);
     digitalWrite(RELAY_PIN_UP, LOW);
     digitalWrite(RELAY_PIN_DOWN, LOW);
   } else if (setting == 0x01) {  // NO TILT
-    actuatorsUp = true;
+    tilt = false;
     digitalWrite(RELAY_PIN_UP, LOW);
     digitalWrite(RELAY_PIN_DOWN, HIGH);
     delay(10000);
