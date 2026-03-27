@@ -2,6 +2,13 @@
 #include <Arduino.h>
 #include <Adafruit_PWMServoDriver.h>
 
+#define SERVOS_IN 0
+#define SERVOS_OUT 1
+#define SHOVEL_UP 1
+#define SHOVEL_DOWN 0
+#define ACC_TILT 1
+#define ACC_LEVEL 0
+
 // PI - Arduino Communication
 #define SHOVEL 13    // Orange 11
 #define ACTUATORS 5  // Brown-White 23
@@ -78,10 +85,23 @@ void setup() {
   servos.setPWM(RIGHT_SERVO, 0, SERVOMIN);
   servos.setPWM(LEFT_SERVO, 0, SERVOMAX);
 
-  // TESTING
-  //turnServos(0);
-  //actuators(0);
-  //returnShovel();
+  // HOMING
+  actuators(ACC_LEVEL);
+  turnServos(SERVOS_OUT);
+  shovel(SHOVEL_DOWN);
+  turnServos(SERVOS_IN);
+
+  // DUMP CYCLE
+  turnServos(SERVOS_OUT);
+  shovel(SHOVEL_UP);
+  turnServos(SERVOS_IN);
+  actuators(ACC_TILT);
+  delay(2000);
+
+  actuators(ACC_LEVEL);
+  turnServos(SERVOS_OUT);
+  shovel(SHOVEL_DOWN);
+  turnServos(SERVOS_IN);
 }
 
 void loop() {
@@ -94,39 +114,41 @@ void loop() {
   // Serial.print(" , ");
   // Serial.println(digitalRead(START));
 
-  // if (!start) {
-  //   start = startLED();
+  // // if (!start) {
+  // //   start = startLED();
+  // // }
+  // if (!busy) {
+  //   Serial.println(1);
+  //   if (!digitalRead(SHOVEL)) {
+  //     Serial.println(2);
+  //     if (!servosIn) {
+  //       Serial.println(3);
+  //       shovel(SHOVEL_UP);  // UP
+  //     }
+  //   } else {
+  //     Serial.println(4);
+  //     if (!servosIn) {
+  //       Serial.println(5);
+  //       shovel(SHOVEL_DOWN);  // DOWN
+  //     }
+  //   }
+  //   if (!digitalRead(ACTUATORS)) {
+  //     Serial.println("Actuators down");
+  //     if (servosIn) {
+  //       actuators(ACC_TILT);  // DOWN
+  //     }
+
+  //   } else {
+  //     actuators(ACC_LEVEL);  // UP
+  //   }
+  //   if (digitalRead(ARMS)) {
+  //     Serial.println("Arms");
+  //     turnServos(SERVOS_IN);
+  //   } else {
+  //     Serial.println("Other arms");
+  //     turnServos(SERVOS_OUT);
+  //   }
   // }
-
-  if (!digitalRead(SHOVEL)) {
-    if (!busy && !servosIn) {
-      shovel(1);  // UP
-    }
-  } else {
-    if (!busy && !servosIn) {
-      shovel(0);  // DOWN
-    }
-  }
-
-  if (digitalRead(ACTUATORS)) {
-    if (!busy && servosIn) {
-      actuators(0);  // DOWN
-    }
-  } else {
-    if (!busy) {
-      actuators(1);  // UP
-    }
-  }
-
-  if (digitalRead(ARMS)) {
-    if (!busy) {
-      turnServos(0);
-    }
-  } else {
-    if (!busy) {
-      turnServos(1);
-    }
-  }
 }
 
 void shovel(int direction) {
@@ -145,7 +167,7 @@ void shovel(int direction) {
   } else if (direction == 1) {  // move up
     digitalWrite(DIR_1, HIGH);
     Serial.println("going up");
-    for (int i = 0; i < 3300; i++) {
+    for (int i = 0; i < 3600; i++) {
       if (shovelPosition > 3300) {
         break;
       }
@@ -163,14 +185,14 @@ void shovel(int direction) {
 void actuators(int setting) {
   digitalWrite(BUSY, HIGH);
   busy = true;
-  if (setting == 0x00) {  // DOWN
+  if (setting == 0x00) {  // TILT
     actuatorsUp = false;
     digitalWrite(RELAY_PIN_UP, HIGH);
     digitalWrite(RELAY_PIN_DOWN, LOW);
     delay(10000);
     digitalWrite(RELAY_PIN_UP, LOW);
     digitalWrite(RELAY_PIN_DOWN, LOW);
-  } else if (setting == 0x01) {  // UP
+  } else if (setting == 0x01) {  // NO TILT
     actuatorsUp = true;
     digitalWrite(RELAY_PIN_UP, LOW);
     digitalWrite(RELAY_PIN_DOWN, HIGH);
@@ -194,6 +216,7 @@ void turnServos(int direction) {
     servos.setPWM(RIGHT_SERVO, 0, (SERVOMAX - 200));
     servos.setPWM(LEFT_SERVO, 0, (SERVOMIN + 200));
   }
+  delay(1000);
   digitalWrite(BUSY, LOW);
   busy = false;
 }
