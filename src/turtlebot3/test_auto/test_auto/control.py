@@ -5,10 +5,6 @@ shovel_time = 10.1
 arms_time = 1.1
 acc_time = 10.1
 
-shovel = 0
-acc = 0
-arms = 0
-
 def init():
     # set pins
     shovel = LED(11)

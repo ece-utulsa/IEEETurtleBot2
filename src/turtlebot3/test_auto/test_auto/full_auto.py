@@ -118,37 +118,42 @@ class Turtlebot3Full(Node):
 
         self.get_logger().info('turtlebot3 full initialized')
 
-        p1 = subprocess.Popen(
-            ["ros2", "launch", "turtlebot3_bringup", "robot.launch.py"],
-            cwd="/home/robotics/pi_ws",
-        )
-        self.processes.append(p1)
+        # p1 = subprocess.Popen(
+        #     [
+        #         "/bin/bash",
+        #         "-lc",
+        #         "source /opt/ros/humble/setup.bash && "
+        #         "source /home/robotics/pi_ws/install/setup.bash && "
+        #         "ros2 launch turtlebot3_bringup robot.launch.py"],
+        #     cwd="/home/robotics/pi_ws",
+        # )
+        # self.processes.append(p1)
         
-        self.wait_for_topic("/odom")
+        # self.wait_for_topic("/odom")
 
-        '''p2 = subprocess.Popen(
-            ["ros2", "run", "test_auto", "scan_filter"],
-            cwd="/home/robotics/desktop_ws/",
-        )
-        self.processes.append(p2)
+        # p2 = subprocess.Popen(
+        #     ["ros2", "run", "test_auto", "scan_filter"],
+        #     cwd="/home/robotics/desktop_ws/",
+        # )
+        # self.processes.append(p2)
 
-        self.wait_for_topic("/scan_filtered")
+        # self.wait_for_topic("/scan_filtered")
 
-        p3 = subprocess.Popen( #TODO would be nice if this only started the nodes we need (commenting out waypoint didn't do anything; i think we only could use amcl)
-            ["ros2", "launch", "turtlebot3_navigation2", "navigation2.launch.py", "map:=/home/robotics/desktop_ws/IEEETurtleBot2/src/turtlebot3/newest_map.yaml"],
-            cwd="/home/robotics/desktop_ws/",
-        )
-        self.processes.append(p3)
+        # p3 = subprocess.Popen( #TODO would be nice if this only started the nodes we need (commenting out waypoint didn't do anything; i think we only could use amcl)
+        #     ["ros2", "launch", "turtlebot3_navigation2", "navigation2.launch.py", "map:=/home/robotics/desktop_ws/IEEETurtleBot2/src/turtlebot3/newest_map.yaml"],
+        #     cwd="/home/robotics/desktop_ws/",
+        # )
+        # self.processes.append(p3)
 
-        self.altSleep(5)
+        # self.altSleep(5)
 
-        p4 = subprocess.Popen(
-            ["ros2", "run", "test_auto", "nav2ext"],
-            cwd="/home/robotics/desktop_ws/",
-        )
-        self.processes.append(p4)
+        # p4 = subprocess.Popen(
+        #     ["ros2", "run", "test_auto", "nav2ext"],
+        #     cwd="/home/robotics/desktop_ws/",
+        # )
+        # self.processes.append(p4)
 
-        self.wait_for_topic("/nav2ext/goal_pose")'''
+        # self.wait_for_topic("/nav2ext/goal_pose")
 
         self.vx = 0
 
@@ -366,7 +371,7 @@ class Turtlebot3Full(Node):
             self.get_logger().info(f'step {self.step}')
             self.amSleeping = False
             self.didSleep = False
-            self.start_backup(0.34) #this is our old friend to run into the container
+            self.start_backup(0.2) #this is our old friend to run into the container
         elif self.step == 10:
             self.get_logger().info(f'step {self.step}')
             self.arm_in()
@@ -384,7 +389,7 @@ class Turtlebot3Full(Node):
         elif self.step == 14:
             self.get_logger().info(f'step {self.step}')
             self.amSleeping = False
-            self.start_backup(0.2) #second half of backup, after arms in and shovel up
+            self.start_backup(0.34) #second half of backup, after arms in and shovel up
         elif self.step == 15:
             self.get_logger().info(f'step {self.step}')
             #this does nothing rn
@@ -407,7 +412,7 @@ class Turtlebot3Full(Node):
         elif self.step == 20:
             self.get_logger().info(f'step {self.step}')
             self.amSleeping = False
-            self.start_backup(0.34, -0.08) #TODO i wish this could use amcl, or at least based on the initial_x and initial_y so it forgets all of the slips its done since then?
+            self.start_backup(0.4, -0.08) #TODO i wish this could use amcl, or at least based on the initial_x and initial_y so it forgets all of the slips its done since then?
         elif self.step == 21:
             self.get_logger().info(f'step {self.step}')
             self.arm_out()
@@ -465,16 +470,16 @@ class Turtlebot3Full(Node):
             self.start_turn(3.14)
         elif self.step == 36:
             self.get_logger().info(f'step {self.step}')
-            self.start_backup(0.75)
+            self.start_backup(0.65)
         elif self.step == 37:
             self.get_logger().info(f'step {self.step}')
             self.start_turn(-0.5)
         elif self.step == 38:
             self.get_logger().info(f'step {self.step}')
-            self.start_backup(0.25)
+            self.start_backup(0.35)
         elif self.step == 39:
             self.get_logger().info(f'step {self.step}')
-            self.start_turn(-1.75, -0.5)
+            self.start_turn(-1.65, -0.5)
         elif self.step == 40:
             self.get_logger().info(f'step {self.step}')
             self.start_backup(0.5)

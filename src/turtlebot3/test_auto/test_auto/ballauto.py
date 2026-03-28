@@ -46,13 +46,15 @@ class Turtlebot3Ball(Node):
     def __init__(self):
         #arduino
         # set pins
-        self.shovel = LED(11)
+        self.shovel = LED(24)
         self.acc = LED(23)
         self.arms = LED(25)
         # homing
+        self.shovel.on()
         self.acc.on()
         self.arms.on()
-        self.shovel.on()
+        self.button = Button(16)
+        self.wasPressed = False
 
         super().__init__('turtlebot3_ball')
 
@@ -86,7 +88,7 @@ class Turtlebot3Ball(Node):
         '''self.goal_pub = self.create_publisher(
             PoseStamped,
             '/nav2ext/goal_pose',
-            10
+            10journalctl -u full_auto.service -b --no-pager | head -n 100
         )
 
         self.pos_pub = self.create_publisher(
@@ -118,13 +120,13 @@ class Turtlebot3Ball(Node):
 
         self.get_logger().info('turtlebot3 ball initialized')
 
-        p1 = subprocess.Popen(
+        '''p1 = subprocess.Popen(
             ["ros2", "launch", "turtlebot3_bringup", "robot.launch.py"],
             cwd="/home/robotics/pi_ws",
         )
         self.processes.append(p1)
         
-        self.wait_for_topic("/odom")
+        self.wait_for_topic("/odom")'''
 
         '''p2 = subprocess.Popen(
             ["ros2", "run", "test_auto", "scan_filter"],
@@ -301,6 +303,11 @@ class Turtlebot3Ball(Node):
 
 
     def update_callback(self):
+        if not self.wasPressed:
+            print("No button")
+            self.wasPressed = self.button.is_pressed
+            return
+
         if not self.navReady:
             return
 
@@ -334,23 +341,27 @@ class Turtlebot3Ball(Node):
             self.step += 1
         elif self.step == 1:
             self.get_logger().info(f'step {self.step}')
-            self.start_backup(0.35, -0.15) #away from wall
+            self.start_backup(0.4, -0.15) #away from wall
         elif self.step == 2:
             self.get_logger().info(f'step {self.step}')
-            self.start_turn(-1.7, -0.3) #toward beacon
+            self.arm_out()
+            self.start_turn(-1.65, -0.3) #toward beacon
         elif self.step == 3:
             self.get_logger().info(f'step {self.step}')
-            self.start_backup(0.95, 0.15) #into beacon wall
+            self.start_backup(0.5, 0.15) #to beacon wall
         elif self.step == 4:
             self.get_logger().info(f'step {self.step}')
-            self.start_backup(0.1, -0.08) #can't be on top of wall when we tilt or ball will go too far
+            self.arm_in()
+            self.start_backup(0.2, 0.15) #into beacon wall
         elif self.step == 5:
             self.get_logger().info(f'step {self.step}')
-            self.shovel_up()
-            self.step += 1
+            self.shovel.off()
+            #self.step += 1
+            self.mySleep(self.shovel_time)
         elif self.step == 6:
             self.get_logger().info(f'step {self.step}')
-            self.mySleep(self.shovel_time)
+            #self.mySleep(self.shovel_time)
+            self.step += 1
         elif self.step == 7:
             self.get_logger().info(f'step {self.step}')
             self.amSleeping = False
@@ -387,7 +398,7 @@ class Turtlebot3Ball(Node):
             self.get_logger().info(f'step {self.step}')
             self.amSleeping = False
             self.didSleep = False
-            self.start_backup(0.34) #this is our old friend to run into the container
+            self.start_backup(0.2) #this is our old friend to run into the container
         elif self.step == 16:
             self.get_logger().info(f'step {self.step}')
             self.arm_in()
@@ -406,7 +417,7 @@ class Turtlebot3Ball(Node):
         elif self.step == 20:
             self.get_logger().info(f'step {self.step}')
             self.amSleeping = False
-            self.start_backup(0.2) #second half of backup, after arms in and shovel up
+            self.start_backup(0.34) #second half of backup, after arms in and shovel up
         elif self.step == 21:
             self.get_logger().info(f'step {self.step}')
             #this does nothing rn
@@ -429,82 +440,108 @@ class Turtlebot3Ball(Node):
         elif self.step == 26:
             self.get_logger().info(f'step {self.step}')
             self.amSleeping = False
-            self.start_backup(0.34, -0.08) #TODO i wish this could use amcl, or at least based on the initial_x and initial_y so it forgets all of the slips its done since then?
-        elif self.step == 27:
-            self.get_logger().info(f'step {self.step}')
-            self.arm_out()
-            self.step += 1
-            #self.send_new_pos(0.0146, -0.1217, self.last_pose_z, self.last_pose_w) #TODO: better with or without?
-        elif self.step == 28:
-            self.get_logger().info(f'step {self.step}')
-            self.mySleep(self.arms_time)
-        elif self.step == 29:
-            self.get_logger().info(f'step {self.step}')
-            self.amSleeping = False
             self.shovel_down()
-        elif self.step == 30:
-            self.get_logger().info(f'step {self.step}')
-            self.mySleep(self.shovel_time)
-        elif self.step == 31:
+            self.start_backup(0.4, -0.08) #TODO i wish this could use amcl, or at least based on the initial_x and initial_y so it forgets all of the slips its done since then?
+        elif self.step == 27:
             self.get_logger().info(f'step {self.step}')
             self.amSleeping = False
             self.start_turn(1.75) #turn to face cave
-        elif self.step == 32:
+        elif self.step == 28:
             self.get_logger().info(f'step {self.step}')
-            self.start_backup(0.75, 0.15) #robot becomes in the cave!
-        elif self.step == 33:
+            self.start_backup(0.65, 0.15) #robot becomes in the cave!
+        elif self.step == 29:
+            self.get_logger().info(f'step {self.step}')
+            self.arm_out()
+            self.start_backup(0.35)
+        elif self.step == 30:
             self.get_logger().info(f'step {self.step}')
             self.arm_in()
             self.step += 1
-        elif self.step == 34:
+        elif self.step == 31:
             self.get_logger().info(f'step {self.step}')
             self.mySleep(self.arms_time)
-        elif self.step == 35:
+        elif self.step == 32:
             self.amSleeping = False
             self.get_logger().info(f'step {self.step}')
-            self.start_backup(0.75) #run into the wall
-        elif self.step == 36:
+            self.start_backup(0.45) #run into the wall
+        elif self.step == 33:
             self.get_logger().info(f'step {self.step}')
             self.start_backup(0.35, -0.08)
-        elif self.step == 37:
+        elif self.step == 34:
             self.get_logger().info(f'step {self.step}')
             self.arm_out()
             self.step += 1
-        elif self.step == 38:
+        elif self.step == 35:
             self.get_logger().info(f'step {self.step}')
             self.mySleep(self.arms_time)
-        elif self.step == 39:
+        elif self.step == 36:
             self.amSleeping = False
             self.get_logger().info(f'step {self.step}')
             self.start_turn(0.45, -0.5)
-        elif self.step == 40:
+        elif self.step == 37:
             self.get_logger().info(f'step {self.step}')
             self.start_backup(0.35)
-            #TODO:do i need to close the arms here anywhere?
-        elif self.step == 41:
+        elif self.step == 38:
             self.get_logger().info(f'step {self.step}')
             self.start_turn(3.14)
+        elif self.step == 39:
+            self.get_logger().info(f'step {self.step}')
+            self.start_backup(0.6) #parallel inside cave
+        elif self.step == 40:
+            self.arm_in()
+            self.step += 1
+        elif self.step == 41:
+            self.mySleep(self.arms_time)
         elif self.step == 42:
             self.get_logger().info(f'step {self.step}')
-            self.start_backup(0.75)
+            self.arm_out()
+            self.start_turn(-0.5)
         elif self.step == 43:
             self.get_logger().info(f'step {self.step}')
-            self.start_turn(-0.5)
+            self.start_backup(0.35)
         elif self.step == 44:
             self.get_logger().info(f'step {self.step}')
-            self.start_backup(0.25)
+            self.start_turn(-1.75, -0.5)
         elif self.step == 45:
             self.get_logger().info(f'step {self.step}')
-            self.start_turn(-1.75, -0.5)
+            self.arm_in()
+            self.start_backup(0.5) #robot becomes out of cave
         elif self.step == 46:
             self.get_logger().info(f'step {self.step}')
-            self.start_backup(0.5)
-        elif self.step == 47:
+            self.start_turn(0.5) # turn to face container
+        elif self.step == 47: #TODO: technically could just set step back to 15 and run in a loop forever
             self.get_logger().info(f'step {self.step}')
-            self.start_turn(0.5)
+            self.amSleeping = False
+            self.didSleep = False
+            self.start_backup(0.2) #this is our old friend to run into the container
         elif self.step == 48:
             self.get_logger().info(f'step {self.step}')
-            self.start_backup(0.34) #our lucky number, lets go drop some more 
+            self.arm_in()
+            self.step += 1
+        elif self.step == 49:
+            self.get_logger().info(f'step {self.step}')
+            self.mySleep(self.arms_time)
+        elif self.step == 50:
+            self.get_logger().info(f'step {self.step}')
+            self.amSleeping = False
+            self.shovel_up()
+            self.step += 1
+        elif self.step == 51:
+            self.get_logger().info(f'step {self.step}')
+            self.mySleep(self.shovel_time)
+        elif self.step == 52:
+            self.get_logger().info(f'step {self.step}')
+            self.amSleeping = False
+            self.start_backup(0.34) #second half of backup, after arms in and shovel up
+        elif self.step == 53:
+            self.get_logger().info(f'step {self.step}')
+            #this does nothing rn
+            self.step += 1
+        elif self.step == 54:
+            self.get_logger().info(f'step {self.step}')
+            self.tilt()
+            self.step += 1
+        
         
 
     def mySleep(self, sleepTime):

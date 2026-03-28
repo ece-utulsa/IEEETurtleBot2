@@ -2,7 +2,7 @@ from gpiozero import LED, Button
 import time
 
 # set pins
-shovel = LED(11)
+shovel = LED(24)
 acc = LED(23)
 arms = LED(25)
 
