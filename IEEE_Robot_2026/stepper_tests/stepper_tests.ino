@@ -28,14 +28,14 @@ bool tilt = true;
 #define STEP_1 4
 
 #define LIMIT_SWITCH 2
-bool limitTrigger = false;
+int stepperHeight = 4000;
 
 int shovelPosition = 0;
 
 // Servos
 Adafruit_PWMServoDriver servos = Adafruit_PWMServoDriver();
-#define SERVOMIN 110  // about 0 degrees
-#define SERVOMAX 500  // about 180 degrees
+#define SERVOMIN 90  // about 0 degrees (start position of left)
+#define SERVOMAX 510  // about 180 degrees (start position of right)
 #define SERVO_FREQ 50
 #define LEFT_SERVO 3
 #define RIGHT_SERVO 2
@@ -110,11 +110,13 @@ void loop() {
   }
   if (!busy) {
     if (!digitalRead(SHOVEL)) {
-      if (!servosIn) {
+ //     if (!servosIn) {
+      if (true) {
         shovel(SHOVEL_UP);  // UP
       }
     } else {
-      if (!servosIn) {
+ //     if (!servosIn) {
+      if (true) {
         shovel(SHOVEL_DOWN);  // DOWN
       }
     }
@@ -152,8 +154,8 @@ void shovel(int direction) {
   } else if (direction == 1) {  // move up
     digitalWrite(DIR_1, HIGH);
     Serial.println("going up");
-    for (int i = 0; i < 3600; i++) {
-      if (shovelPosition > 3300) {
+    for (int i = 0; i < stepperHeight; i++) {
+      if (shovelPosition > stepperHeight) {
         break;
       }
       digitalWrite(STEP_1, HIGH);
@@ -162,6 +164,7 @@ void shovel(int direction) {
       delay(1);
       shovelPosition++;
     }
+    stepperHeight = 4020;
   }
   digitalWrite(BUSY, LOW);
   busy = false;
