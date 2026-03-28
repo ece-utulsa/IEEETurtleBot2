@@ -10,10 +10,10 @@
 #define ACC_LEVEL 0
 
 // PI - Arduino Communication
-#define SHOVEL 13    // Orange 11
+#define SHOVEL 6    // Orange 11
 #define ACTUATORS 5  // Brown-White 23
 #define ARMS A2      // Green 25
-#define BUSY 6       // Brown, PI 24
+#define BUSY 13       // Brown, PI 24
 bool busy = false;
 #define START 10  // Orange-white 8
 
@@ -86,7 +86,7 @@ void setup() {
   servos.setPWM(LEFT_SERVO, 0, SERVOMAX);
 
   // HOMING
-  actuators(ACC_LEVEL);
+  //actuators(ACC_LEVEL);
   //turnServos(SERVOS_OUT);
   //shovel(SHOVEL_DOWN);
   //turnServos(SERVOS_IN);
