@@ -13,6 +13,8 @@ from rclpy.clock import Clock
 from rclpy.qos import QoSProfile
 from rclpy.node import Node
 
+from gpiozero import LED
+
 LINEAR_CONTROL_EXPONENT = 2.0 # how much to exponentiate the input direction by
 ANGULAR_CONTROL_EXPONENT = 1.5 # how much to exponentiate the input direction by
 
