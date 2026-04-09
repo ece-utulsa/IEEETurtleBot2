@@ -8,6 +8,7 @@ import signal
 
 from geometry_msgs.msg import Twist
 from geometry_msgs.msg import TwistStamped
+from std_msgs.msg import Bool
 import rclpy
 from rclpy.clock import Clock
 from rclpy.qos import QoSProfile
@@ -58,6 +59,7 @@ class TurtNode(Node):
         self.handler = handler
         self.qos = QoSProfile(depth=10)
         self.pub = self.create_publisher(Twist, "cmd_vel", self.qos)
+        self.shovel_pub = self.create_publisher(Bool, "shovel_down", self.qos)
 
         self.target_linear_velocity = 0.0
         self.target_angular_velocity = 0.0
@@ -85,21 +87,10 @@ class TurtNode(Node):
             print("twist: ", twist)
             self.pub.publish(twist)
 
-    def shovel_down(self):
-        self.shovel.on()
-        #time.sleep(shovel_time)
-        return True
-
-    def shovel_up(self):
-        self.shovel.off()
-        #time.sleep(shovel_time)
-        return True
-
     def markerMove(self):
-        if (self.markerDown):
-            self.shovel_down
-        else:
-            self.shovel_up
+        shovel_msg = Bool()
+        shovel_msg.data = self.markerDown
+        self.shovel_pub.publish(shovel_msg)
 
 
     def shutdown(self):
@@ -114,6 +105,7 @@ class TurtNode(Node):
         indir = self.handler.get_final_output()
         if self.handler.get_button:
             self.markerDown = not(self.markerDown)
+            self.markerMove
         self.target_linear_velocity = (abs(indir.y) ** LINEAR_CONTROL_EXPONENT) * MAX_VEL_LINEAR
         self.target_angular_velocity = (abs(indir.x) ** ANGULAR_CONTROL_EXPONENT) * MAX_VEL_ANGULAR
 
@@ -126,7 +118,7 @@ class TurtNode(Node):
         #print("final angular velocity: ", self.control_angular_velocity)
 
         self.move(self.control_linear_velocity, self.control_angular_velocity)
-        self.markerMove
+        
 
 
 
