@@ -25,10 +25,12 @@ class Shovel(Node):
         
 
     def move_shovel(self, move):
+        returnVar = False
         if (move):
-            self.shovel_down()
+            returnVar = self.shovel_down()
         else:
-            self.shovel_up()
+            returnVar = self.shovel_up()
+        return returnVar
 
     def shovel_down(self):
         self.shovel.on()
