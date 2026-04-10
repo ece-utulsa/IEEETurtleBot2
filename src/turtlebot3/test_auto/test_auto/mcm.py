@@ -14,7 +14,6 @@ from rclpy.clock import Clock
 from rclpy.qos import QoSProfile
 from rclpy.node import Node
 
-from gpiozero import LED
 
 LINEAR_CONTROL_EXPONENT = 2.0 # how much to exponentiate the input direction by
 ANGULAR_CONTROL_EXPONENT = 1.5 # how much to exponentiate the input direction by
@@ -69,7 +68,6 @@ class TurtNode(Node):
         self.timer = self.create_timer(0.01, self.loop)
 
         self.markerDown = True
-        self.shovel = LED(24)
 
         self.shutting_down = False
         #rclpy.get_default_context().on_shutdown(self.shutdown)
@@ -103,9 +101,10 @@ class TurtNode(Node):
     def loop(self):
 
         indir = self.handler.get_final_output()
-        if self.handler.get_button:
+        got_button = self.handler.get_button()
+        if got_button:
             self.markerDown = not(self.markerDown)
-            self.markerMove
+            self.markerMove()
         self.target_linear_velocity = (abs(indir.y) ** LINEAR_CONTROL_EXPONENT) * MAX_VEL_LINEAR
         self.target_angular_velocity = (abs(indir.x) ** ANGULAR_CONTROL_EXPONENT) * MAX_VEL_ANGULAR
 
@@ -155,7 +154,7 @@ class InputHandler:
         if len(self.inputs) == 0: return Vec2(0, 0)
         total = Vec2(0, 0)
         total += (0, self.inputs[self.controllers[0]].y)
-        total += (self.inputs[self.controllers[1].x, 0])
+        total += (self.inputs[self.controllers[1]].x, 0)
         # i = 0
         # for vec in self.inputs.values():
         #     if (i == 0):
